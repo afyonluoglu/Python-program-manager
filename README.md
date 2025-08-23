@@ -68,7 +68,6 @@ python_program_manager/
 ├── .gitignore         # Git ignore rules
 ├── backups            # backup files cretaed
 ├── icons              # ico files used by program in folder view
-└── [other modules]    # Additional application modules
 ```
 
 ## 🔧 Configuration
