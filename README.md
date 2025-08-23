@@ -61,11 +61,13 @@ python main.py
 
 ```
 python_program_manager/
-├── main.py              # Application entry point
-├── app_gui.py          # Main GUI application class
-├── requirements.txt    # Python dependencies
+├── main.py            # Application entry point
+├── app_gui.py         # Main GUI application class
+├── requirements.txt   # Python dependencies
 ├── README.md          # Project documentation
 ├── .gitignore         # Git ignore rules
+├── backups            # backup files cretaed
+├── icons              # ico files used by program in folder view
 └── [other modules]    # Additional application modules
 ```
 
