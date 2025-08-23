@@ -1,0 +1,20 @@
+# Core GUI framework (usually included with Python)
+# tkinter - included with most Python installations
+
+# Additional dependencies for the Python Program Manager
+# Add specific versions if needed for compatibility
+
+# For file operations and system integration
+pathlib2>=2.3.6; python_version<"3.4"
+
+# For enhanced GUI features (if used)
+# pillow>=8.0.0
+
+# For configuration management (if using external config)
+# configparser>=5.0.0
+
+# For logging enhancements (if used)
+# colorlog>=6.0.0
+
+# Note: This project primarily uses built-in Python libraries
+# Add additional dependencies here as the project grows

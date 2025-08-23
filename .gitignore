@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific exclusions
+*.bat
+*.exe
+*.db
+*.json
+*.url
+*.zip
+backups/
+
+# Settings and logs
+settings/
+logs/
+config/
+*.log
+*.conf
+*.ini
+settings.txt
+config.txt
+user_settings.json
+app_config.json

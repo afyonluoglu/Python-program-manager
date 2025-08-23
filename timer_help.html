@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Python Program Yöneticisi - Yardım</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #fafafa; color: #333; margin: 0; padding: 0; }
+        header { background: #2a5d84; color: #fff; padding: 1em 2em; }
+        header h1 { margin: 0; font-size: 1.8em; }
+        nav { background: #f0f0f0; padding: 0.5em 2em; border-bottom: 1px solid #ddd; }
+        nav a { margin-right: 1em; color: #2a5d84; text-decoration: none; font-weight: bold; }
+        section { padding: 2em; border-bottom: 1px solid #e0e0e0; }
+        section:last-child { border: none; }
+        h2 { color: #2a5d84; display: flex; align-items: center; }
+        h2 img { width: 24px; height: 24px; margin-right: 0.5em; }
+        ul { list-style: none; padding-left: 0; }
+        ul li { margin-bottom: 0.5em; line-height: 1.5; }
+        .shortcut { background: #eef; color: #005; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+        footer { background: #2a5d84; color: #fff; text-align: center; padding: 1em; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; color: #fff; font-size: 0.9em; margin-left: 0.5em; }
+        .badge-python { background: #306998; }
+        .badge-zip { background: #d0451b; }
+        .badge-exe { background: #555; }
+        .badge-mp3 { background: #ea5; }
+        .badge-new { background: #28a745; }
+        .badge-readonly { background: #6c757d; }
+        .feature-new { border-left: 4px solid #28a745; padding-left: 1em; background: #f8fff8; margin: 0.5em 0; }
+        .feature-section { margin: 2em 0; }
+        .shortcut-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .shortcut-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid #007bff;
+        }
+
+        .key {
+            background-color: #343a40;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-right: 15px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .feature-section h3 {
+            color: #495057;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .feature-section ul li {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Python Program Yöneticisi - Yardım Kılavuzu (v1.3)</h1>
+</header>
+<nav>
+    <a href="#folder-selection">Klasör Seçme</a>
+    <a href="#navigation">Gezinme</a>
+    <a href="#file-operations">Dosya İşlemleri</a>
+    <a href="#zip-management">ZIP Yönetimi</a>
+    <a href="#python-editor">Python Editor</a>
+    <a href="#favorites">Favoriler</a>
+    <a href="#search">Arama</a>
+    <a href="#history">Geçmiş</a>
+    <a href="#themes">Temalar</a>
+    <a href="#settings">Pencere Ayarları</a>
+    <a href="#shortcuts">Kısayollar</a>
+</nav>
+
+<section id="folder-selection">
+    <h2><img src="icons/folder.png" alt=""> 1. Klasör Seçme <span class="shortcut">Ctrl+O</span></h2>
+    <ul>
+        <li>Program açıldığında son kullanılan klasör otomatik yüklenir.</li>
+        <li>Yeni klasör seçmek için <b>Dosya &gt; Klasör Seç...</b> veya <span class="shortcut">Ctrl+O</span> kullanın.</li>
+        <li>Seçilen klasör ve alt klasörler sol panelde ağaç yapısı olarak gösterilir.</li>
+    </ul>
+</section>
+
+<section id="navigation">
+    <h2><img src="icons/tree.png" alt=""> 2. Gezinti</h2>
+    <ul>
+        <li>Sol panelde klasör ağacını genişletmek için klasör adının yanındaki oku tıklayın.</li>
+        <li>Klasör seçildiğinde sağ panelde yalnızca <b>.py</b><span class="badge badge-python">PY</span>, <b>.exe</b><span class="badge badge-exe">EXE</span>, <b>.zip</b><span class="badge badge-zip">ZIP</span> ve <b>.mp3</b><span class="badge badge-mp3">MP3</span> dosyalar listelenir.</li>
+        <li>Üst klasöre dönmek için listede <b>..</b> satırını çift tıklayın.</li>
+    </ul>
+</section>
+
+<section id="file-operations">
+    <h2><img src="icons/run.png" alt=""> 3. Dosya İşlemleri</h2>
+    <ul>
+        <li>Dosyaya <b>çift tıklama</b> ile şu işlemler yapılır:
+            <ul>
+                <li><b>.py</b>: Python yorumlayıcısıyla çalıştırılır.</li>
+                <li><b>.exe</b>: Doğrudan çalıştırılır.</li>
+                <li><b>.zip</b>: İçerik görüntüleme penceresi açılır.</li>
+                <li><b>.mp3</b>: Dahili oynatıcı ile çalınır.</li>
+            </ul>
+        </li>
+        <li>Hata oluşursa, hata mesajı ayrı pencerede gösterilir.</li>
+        <li>Sağ tık menüsünde ek seçenekler:
+            <ul>
+                <li>Açıklama Düzenle (sadece .py)</li>
+                <li>Çalıştır / Çevir &gt; EXE</li>
+                <li>Favorilere Ekle / Kaldır</li>
+                <li>ZIP Adı Değiştir</li>
+                <li>Dosyaya Git (sistem dosya gezgini)</li>
+                <li>Sil (geri alınamaz!)</li>
+            </ul>
+        </li>
+    </ul>
+</section>
+
+<section id="zip-management">
+    <h2><img src="icons/zip.png" alt=""> 4. ZIP Dosya Yönetimi</h2>
+    <div class="feature-new">
+        <ul>
+            <li><b>ZIP İçeriği Görüntüleme</b>: ZIP dosyalarına çift tıklayarak içeriği ağaç yapısında görüntüleyin.</li>
+            <li><b>Dosya Çalıştırma</b>: ZIP içindeki dosyalara çift tıklayarak geçici olarak çıkartıp çalıştırın.</li>
+            <li><b>Sağ Tık Menüsü</b>:
+                <ul>
+                    <li><b>Çalıştır</b>: Dosyayı geçici olarak çıkartıp çalıştır</li>
+                    <li><b>Çıkart...</b>: Dosyayı istediğiniz konuma çıkart</li>
+                    <li><b>Python Dosyasını Aç</b><span class="badge badge-readonly">READONLY</span>: Python dosyalarını editörde güvenli modda görüntüle</li>
+                </ul>
+            </li>
+            <li><b>Platform Desteği</b>: Windows, macOS ve Linux'ta ZIP işlemleri desteklenir.</li>
+            <li><b>Geçici Dosya Yönetimi</b>: Çıkartılan dosyalar otomatik olarak temizlenir.</li>
+        </ul>
+    </div>
+</section>
+
+<section id="python-editor">
+    <h2><img src="icons/editor.png" alt=""> 5. Python Editor İyileştirmeleri</h2>
+    <div class="feature-new">
+        <ul>
+            <li><b>Readonly (Salt Okunur) Mod</b><span class="badge badge-readonly">READONLY</span>:
+                <ul>
+                    <li>ZIP içindeki Python dosyalarını güvenli şekilde görüntüleyin</li>
+                    <li>Syntax highlighting korunur</li>
+                    <li>Dosya düzenleme engellenir</li>
+                    <li>Kaydet butonu otomatik gizlenir</li>
+                </ul>
+            </li>
+            <li><b>Gelişmiş Pencere Yönetimi</b>:
+                <ul>
+                    <li>Modal pencere kontrolü</li>
+                    <li>Otomatik focus yönetimi</li>
+                    <li>Pencereyi en üste getirme</li>
+                </ul>
+            </li>
+            <li><b>Geçmiş Entegrasyonu</b>: Readonly editör kullanımı geçmişe kaydedilir</li>
+        </ul>
+    </div>
+</section>
+
+<section id="favorites">
+    <h2><img src="icons/star.png" alt=""> 6. Favoriler Paneli <span class="shortcut">Ctrl+B</span></h2>
+    <ul>
+        <li>Görünüm &gt; Favoriler Panelini Göster/Gizle veya <span class="shortcut">Ctrl+B</span>.</li>
+        <li>Favorilere eklemek için dosyaya sağ tık &gt; Favorilere Ekle.</li>
+        <li>Panelde çift tıklama ile çalıştırma, sağ tık ile düzenleme veya kaldırma.</li>
+        <li>Panel konumu ve görünürlüğü kaydedilir.</li>
+    </ul>
+</section>
+
+<section id="search">
+    <h2><img src="icons/search.png" alt=""> 7. Arama</h2>
+    <ul>
+        <li>Dosya Ara: <span class="shortcut">Ctrl+F</span></li>
+        <li>Kelime Ara: <span class="shortcut">Ctrl+Shift+F</span></li>
+        <li>Arama sonuçlarında çift tıklama ile çalıştırma veya dosya açma.</li>
+    </ul>
+</section>
+
+<section id="history">
+    <h2><img src="icons/history.png" alt=""> 8. Geçmiş İşlemler <span class="shortcut">Ctrl+H</span></h2>
+    <ul>
+        <li>Yapılan işlemler (çalıştırma, sıkıştırma, arama, yeniden adlandırma, MP3 oynatma) kaydedilir.</li>
+        <li>Filtre: İşlem türüne göre renk kodlu checkbox'larla süzme.</li>
+        <li>Tarih aralığı (Bugün, Dün, Son Hafta, Son Ay, Hepsi) filtresi.</li>
+        <li>İstatistikler: İşlem sayıları ve en çok çalıştırılan program listesi.</li>
+        <div class="feature-new">
+            <li><b>Yeni Kayıt Türleri</b><span class="badge badge-new">YENİ</span>:
+                <ul>
+                    <li>ZIP dosya çıkartma işlemleri</li>
+                    <li>Python Editor (Readonly) kullanımı</li>
+                    <li>ZIP içerik görüntüleme</li>
+                </ul>
+            </li>
+        </div>
+    </ul>
+</section>
+
+<section id="themes">
+    <h2><img src="icons/theme.png" alt=""> 9. Temalar <span class="shortcut">Ctrl+T</span></h2>
+    <ul>
+        <li>Tema Yönetimi penceresinden renk paletleri oluşturun veya düzenleyin.</li>
+        <li>Kaydedilen tema program açılışında otomatik uygulanır.</li>
+        <li>Varsayılana Dön seçeneği ile orijinal tema yüklenir.</li>
+    </ul>
+</section>
+
+<section id="settings">
+    <h2><img src="icons/settings.png" alt=""> 10. Pencere Ayarları <span class="shortcut">Ctrl+P</span></h2>
+    <ul>
+        <li>Tüm pencerelerin (ana, geçmiş, tema, arama, ZIP içeriği, yardımcı) boyut ve konumu kaydedilir.</li>
+        <li>Ayarlar &gt; Pencere Ayarları'dan her pencereyi varsayılan konuma sıfırlayın.</li>
+        <div class="feature-new">
+            <li><b>Yeni Pencere Türleri</b><span class="badge badge-new">YENİ</span>:
+                <ul>
+                    <li>ZIP İçeriği pencereleri</li>
+                    <li>Python Editor (Readonly) pencereleri</li>
+                    <li>Modal pencere yönetimi</li>
+                </ul>
+            </li>
+        </div>
+    </ul>
+</section>
+
+<section id="shortcuts">
+    <h2><img src="icons/shortcuts.png" alt=""> 11. Klavye Kısayolları</h2>
+    <ul>
+        <li><span class="shortcut">Ctrl+O</span>: Klasör Seç</li>
+        <li><span class="shortcut">Ctrl+D</span>: Dosya Ara</li>
+        <li><span class="shortcut">Ctrl+F</span>: Kelime Ara</li>
+        <li><span class="shortcut">Ctrl+B</span>: Favoriler Paneli</li>
+        <li><span class="shortcut">Ctrl+H</span>: Geçmiş İşlemler</li>
+        <li><span class="shortcut">Ctrl+T</span>: Tema İşlemleri</li>
+        <li><span class="shortcut">Ctrl+P</span>: Pencere Ayarları</li>
+        <li><span class="shortcut">F1</span>: Yardım</li>
+        <li><span class="shortcut">Delete</span>: Seçili dosyayı sil</li>
+        <li><span class="shortcut">Esc</span>: Açık pencereleri kapat</li>
+    </ul>
+</section>
+
+<h2>📄 Dosya Türü Desteği</h2>
+<div class="feature-section">
+    <h3>🐍 Python Dosyaları (.py)</h3>
+    <ul>
+        <li><strong>Çift Tıklama:</strong> Python dosyasını çalıştırır</li>
+        <li><strong>Sağ Tık Menüsü:</strong> Çalıştır, Düzenle, Bağımlılık Analizi seçenekleri</li>
+        <li><strong>Renk Kodu:</strong> Kırmızı renkte görüntülenir</li>
+        <li><strong>Açıklama Ekleme:</strong> Dosya açıklaması ekleyebilirsiniz</li>
+    </ul>
+
+    <h3>📄 JSON Dosyaları (.json)</h3>
+    <ul>
+        <li><strong>Çift Tıklama:</strong> JSON görüntüleyici açılır</li>
+        <li><strong>Özel Görüntüleyici:</strong> Formatlanmış JSON içeriği</li>
+        <li><strong>Renk Kodu:</strong> Turuncu renkte, açık turuncu arka plan</li>
+        <li><strong>Özellikler:</strong> Kopyalama, varsayılan uygulama ile açma</li>
+    </ul>
+
+    <h3>📖 Markdown Dosyaları (.md, .markdown)</h3>
+    <ul>
+        <li><strong>Çift Tıklama:</strong> Markdown görüntüleyici açılır</li>
+        <li><strong>Formatlanmış Görünüm:</strong> Başlıklar, kod blokları, listeler formatlanır</li>
+        <li><strong>Renk Kodu:</strong> Mavi renkte, GitHub benzeri arka plan</li>
+        <li><strong>Ham/Formatlanmış Geçiş:</strong> İki görünüm modu arasında geçiş</li>
+    </ul>
+
+    <h3>📁 Klasörler</h3>
+    <ul>
+        <li><strong>Renk Kodu:</strong> Kahverengi arka plan, altın sarısı metin</li>
+        <li><strong>Gezinme:</strong> Çift tıklayarak klasöre giriş</li>
+        <li><strong>Üst Klasör:</strong> ".." ile bir üst klasöre çıkış</li>
+    </ul>
+
+    <h3>⚙️ Çalışabilir Dosyalar (.exe)</h3>
+    <ul>
+        <li><strong>Renk Kodu:</strong> Yeşil renkte görüntülenir</li>
+        <li><strong>Çalıştırma:</strong> Güvenli çalıştırma onayı ile</li>
+    </ul>
+</div>
+
+<h2>🎨 Dosya Listesi Özellikleri</h2>
+<div class="feature-section">
+    <h3>🌈 Renk Kodlaması</h3>
+    <p>Farklı dosya türleri farklı renklerle görüntülenir:</p>
+    <ul>
+        <li><span style="color: #CF0101; font-weight: bold;">🐍 Python dosyaları - Kırmızı</span></li>
+        <li><span style="color: #FF6600; background-color: #FFF8E6; padding: 2px 4px;">📄 JSON dosyaları - Turuncu</span></li>
+        <li><span style="color: #0366D6; background-color: #F6F8FA; padding: 2px 4px;">📖 Markdown dosyaları - Mavi</span></li>
+        <li><span style="color: #008414; font-weight: bold;">⚙️ Çalışabilir dosyalar - Yeşil</span></li>
+        <li><span style="background-color: #FAEDD9; color: #956B00; padding: 2px 4px;">📁 Klasörler - Altın sarısı</span></li>
+        <li><span style="color: #666666;">📄 Diğer dosyalar - Gri</span></li>
+    </ul>
+
+    <h3>📊 Sütun Bilgileri</h3>
+    <ul>
+        <li><strong>Dosya Adı:</strong> İkon ile birlikte dosya/klasör adı</li>
+        <li><strong>Açıklama:</strong> Kullanıcı tanımlı açıklama veya dosya boyutu</li>
+        <li><strong>Değişiklik Tarihi:</strong> Son değiştirilme tarihi ve saati</li>
+    </ul>
+
+    <h3>🔧 Liste Yönetimi</h3>
+    <ul>
+        <li><strong>Sıralama:</strong> Sütun başlıklarına tıklayarak sıralama</li>
+        <li><strong>Sütun Genişliği:</strong> Sütun genişlikleri otomatik kaydedilir</li>
+        <li><strong>Çoklu Seçim:</strong> Ctrl+tıklama ile çoklu dosya seçimi</li>
+    </ul>
+</div>
+
+<h2>👁️ Özel Görüntüleyiciler</h2>
+<div class="feature-section">
+    <h3>📄 JSON Görüntüleyici</h3>
+    <ul>
+        <li>Otomatik JSON formatlaması ve syntax doğrulama</li>
+        <li>Hatalı JSON için ham metin görünümü</li>
+        <li>Anahtarları alfabetik sıralama</li>
+        <li>Kopyalama ve dışa aktarma seçenekleri</li>
+        <li>Pencere boyutu ve konumu hatırlama</li>
+    </ul>
+
+    <h3>📖 Markdown Görüntüleyici</h3>
+    <ul>
+        <li><strong>Desteklenen Formatlar:</strong> Başlıklar (H1-H6), kod blokları, listeler</li>
+        <li><strong>Metin Formatı:</strong> Kalın, italik, satır içi kod</li>
+        <li><strong>Özel Öğeler:</strong> Alıntılar, yatay çizgiler, linkler</li>
+        <li><strong>Görünüm Modları:</strong> Formatlanmış ve ham metin arasında geçiş</li>
+        <li><strong>Font Desteği:</strong> Başlıklar için farklı font boyutları</li>
+    </ul>
+</div>
+
+<h2>🔍 Gelişmiş Arama</h2>
+<div class="feature-section">
+    <h3>📝 Dosya İçeriği Arama</h3>
+    <ul>
+        <li><strong>Kelime Arama:</strong> Python dosyalarının içinde kelime arama</li>
+        <li><strong>Sonuç Gösterimi:</strong> Bulunan kelimeler ve satır numaraları</li>
+        <li><strong>Hızlı Erişim:</strong> Sonuçtan dosyaya doğrudan geçiş</li>
+    </ul>
+
+    <h3>🎯 Dosya Adı Arama</h3>
+    <ul>
+        <li>Joker karakter desteği (* ve ?)</li>
+        <li>Büyük/küçük harf duyarsız arama</li>
+        <li>Alt klasörlerde rekürsif arama</li>
+    </ul>
+</div>
+
+<h2>🎹 Klavye Kısayolları</h2>
+<div class="feature-section">
+    <div class="shortcut-grid">
+        <div class="shortcut-item">
+            <span class="key">F1</span>
+            <span>Bu yardım ekranını açar</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="key">F5</span>
+            <span>Dosya listesini yeniler</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="key">CtrlD</span>
+            <span>Dosya arama penceresini açar</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="key">Ctrl+F</span>
+            <span>Kelime arama penceresini açar</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="key">Enter</span>
+            <span>Seçili dosyayı çalıştırır/açar</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="key">Backspace</span>
+            <span>Üst klasöre çıkar</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="key">Delete</span>
+            <span>Seçili dosyayı siler</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="key">F2</span>
+            <span>Dosya/klasör adını değiştirir</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="key">Escape</span>
+            <span>Açık pencereleri kapatır</span>
+        </div>
+    </div>
+</div>
+
+<h2>💡 İpuçları ve Püf Noktaları</h2>
+<div class="feature-section">
+    <ul>
+        <li><strong>Pencere Boyutları:</strong> Tüm pencere boyutları ve konumları otomatik kaydedilir</li>
+        <li><strong>Sütun Genişlikleri:</strong> Dosya listesi sütun genişlikleri klasör bazında hatırlanır</li>
+        <li><strong>Son Erişim:</strong> En son açılan klasör program başlangıcında otomatik yüklenir</li>
+        <li><strong>Güvenli Çalıştırma:</strong> .exe dosyaları çalıştırılmadan önce onay istenir</li>
+        <li><strong>Hata Yönetimi:</strong> Tüm hatalar detaylı mesajlarla kullanıcıya bildirilir</li>
+        <li><strong>Performans:</strong> Büyük klasörler için lazy loading kullanılır</li>
+    </ul>
+</div>
+
+<footer>
+    <p>&copy; 2025 Python Program Yöneticisi - Tüm hakları saklıdır.</p>
+</footer>
+</body>
+</html>
