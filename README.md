@@ -20,6 +20,9 @@ A comprehensive desktop application for managing and organizing Python programs,
 
 ## 📸 Screenshots
 
+### Main Screen
+![Main Screen](screenshots/main_screen.png)
+
 ### Main Interface with Theme Management
 ![Theme Management](screenshots/tema_yonetimi.png)
 
