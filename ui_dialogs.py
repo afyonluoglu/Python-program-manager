@@ -46,7 +46,7 @@ class SearchResultsWindow(tk.Toplevel):
         tree_frame.pack(fill=tk.BOTH, expand=True)
 
         # Treeview oluştur
-        columns = ("Dosya Adı", "Yol", "Boyut (KB)", "Değiştirilme Tarihi")
+        columns = ("Dosya Adı", "Yol", "Boyut", "Değiştirilme Tarihi")
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=20)
 
         # Sütun başlıklarını ayarla
@@ -56,10 +56,10 @@ class SearchResultsWindow(tk.Toplevel):
                 self.tree.column(col, width=200)
             elif col == "Yol":
                 self.tree.column(col, width=350)
-            elif col == "Boyut (KB)":
-                self.tree.column(col, width=100)
+            elif col == "Boyut":
+                self.tree.column(col, width=100, anchor="e")
             elif col == "Değiştirilme Tarihi":
-                self.tree.column(col, width=150)
+                self.tree.column(col, width=150, anchor="center")
         
         # Scrollbar ekle
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
@@ -73,7 +73,7 @@ class SearchResultsWindow(tk.Toplevel):
         for file_info in self.found_files_details:
             file_path = file_info['path']
             file_name = os.path.basename(file_path)
-            file_size = file_info['size_kb']
+            file_size = self.format_file_size(file_info['size_kb']*1024)
             modified_date = file_info['modified']
             
             self.tree.insert("", tk.END, values=(file_name, file_path, file_size, modified_date))
@@ -89,7 +89,19 @@ class SearchResultsWindow(tk.Toplevel):
         
         self.tree.bind("<Button-3>", self.show_context_menu)
         self.tree.bind("<Double-1>", lambda e: self.open_selected_file())
-    
+
+    @staticmethod
+    def format_file_size(size_bytes):
+        """Dosya boyutunu uygun birimle (KB, MB, GB) formatlı string olarak döndürür."""
+        if size_bytes < 1024:
+            return f"{size_bytes} B"
+        elif size_bytes < 1024 ** 2:
+            return f"{size_bytes / 1024:,.2f} KB"
+        elif size_bytes < 1024 ** 3:
+            return f"{size_bytes / (1024 ** 2):,.2f} MB"
+        else:
+            return f"{size_bytes / (1024 ** 3):,.2f} GB"
+
     def show_context_menu(self, event):
         """Sağ tık menüsünü göster"""
         context_menu = tk.Menu(self, tearoff=0)
