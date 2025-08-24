@@ -1195,7 +1195,10 @@ class App(tk.Tk):
         # print(f"🔸 '{folder_path}' Klasör özellikleri hesaplanıyor... ")
         folder_size, total_python_size, file_count, py_file_count, zip_file_count, total_zip_size = calculate_folder_size(folder_path)
         sonuc = self.format_file_size(folder_size)
-        sonuc = f"Folder: {folder_path}\nSize: {self.format_file_size(folder_size)}\nNumber of files: {file_count:,}\n\nNumber of Python files: {py_file_count:,}\nTotal Python Size: {self.format_file_size(total_python_size)}\n\nNumber of ZIP files: {zip_file_count:,}\nTotal ZIP Size: {self.format_file_size(total_zip_size)}"
+        sonuc = f"Folder: {folder_path}\n\n" + \
+                 f"Number of files: {file_count:,}\nTotal Folder Size: {self.format_file_size(folder_size)}\n\n" + \
+                 f"Number of Python files: {py_file_count:,}\nTotal Python Size: {self.format_file_size(total_python_size)}\n\n" + \
+                 f"Number of ZIP files: {zip_file_count:,}\nTotal ZIP Size: {self.format_file_size(total_zip_size)}"
 
         messagebox.showinfo("Folder Properties",  sonuc)
 

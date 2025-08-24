@@ -5,11 +5,44 @@ A comprehensive desktop application for managing and organizing Python programs,
 ## 🚀 Features
 
 - **Program Organization**: Categorize and manage your Python scripts and projects
+- **Advanced Python Editor**: Built-in syntax highlighting and code editing capabilities
+- **Code Analysis Tools**: Analyze Python code structure, methods, and dependencies
+- **Theme Management**: Multiple visual themes for personalized experience
+- **History Management**: Track and manage your program execution history
+- **Context Menus**: Right-click context menus for quick actions
+- **Markdown Viewer**: Built-in markdown file viewer and editor
+- **Dependency Analysis**: Analyze and visualize project dependencies
+- **Method Analysis**: Detailed analysis of Python methods and functions
 - **Quick Launch**: Execute Python programs directly from the interface
-- **Project Management**: Create, edit, and organize Python projects
 - **User-Friendly GUI**: Built with Tkinter for cross-platform compatibility
 - **High DPI Support**: Optimized for modern high-resolution displays
 - **Lightweight**: Minimal resource usage with fast startup times
+
+## 📸 Screenshots
+
+### Main Interface with Theme Management
+![Theme Management](screenshots/tema_yonetimi.png)
+
+### Built-in Python Editor
+![Python Editor](screenshots/python_editor.png)
+
+### Code Analysis Features
+![Python Analysis](screenshots/python_analiz.png)
+
+### Method Analysis Tool
+![Method Analysis](screenshots/metod_analiz.png)
+
+### Dependency Analysis
+![Dependency Analysis](screenshots/dependency_analiz.png)
+
+### History Manager
+![History Manager](screenshots/history_manager.png)
+
+### Context Menu Features
+![Context Menu](screenshots/context_menu.png)
+
+### Markdown Viewer
+![Markdown Viewer](screenshots/markdown_viewer.png)
 
 ## 📋 Requirements
 
@@ -52,32 +85,81 @@ python main.py
 ### Basic Operations
 
 1. **Launch the Application**: Run `python main.py`
-2. **Add Programs**: Use the interface to add your Python scripts and projects
-3. **Organize**: Create categories and organize your programs
-4. **Execute**: Launch programs directly from the manager
-5. **Manage**: Edit, delete, or modify program entries
+2. **Code Editing**: Use the built-in Python editor with syntax highlighting
+3. **Code Analysis**: Analyze your Python code structure and dependencies
+4. **Theme Selection**: Choose from multiple visual themes
+5. **History Tracking**: View and manage your program execution history
+6. **Context Actions**: Right-click for quick access to actions
+7. **Markdown Support**: View and edit markdown files within the application
+8. **Program Management**: Add, organize, and execute Python scripts
+
+### Key Features in Detail
+
+#### Python Editor
+- Syntax highlighting for Python code
+- Line numbering and code folding
+- Built-in code execution capabilities
+
+#### Analysis Tools
+- **Method Analysis**: Analyze function and method structures
+- **Dependency Analysis**: Visualize project dependencies
+- **Code Structure**: Review code organization and complexity
+
+#### Theme Management
+- Multiple built-in themes
+- Customizable appearance
+- Dark and light mode support
 
 ## 📁 Project Structure
 
 ```
 python_program_manager/
-├── main.py            # Application entry point
-├── app_gui.py         # Main GUI application class
-├── requirements.txt   # Python dependencies
-├── README.md          # Project documentation
-├── .gitignore         # Git ignore rules
-├── backups            # backup files cretaed
-├── icons              # ico files used by program in folder view
+├── main.py                 # Application entry point
+├── app_gui.py             # Main GUI application class
+├── python_editor.py       # Built-in Python code editor
+├── python_analyzer.py     # Code analysis tools
+├── theme_manager.py       # Theme management system
+├── history_manager.py     # Execution history tracking
+├── db_manager.py          # Database operations
+├── ui_manager.py          # User interface management
+├── ui_dialogs.py          # Dialog windows
+├── ui_menus.py            # Menu systems
+├── requirements.txt       # Python dependencies
+├── README.md              # Project documentation
+├── .gitignore            # Git ignore rules
+├── screenshots/          # Application screenshots
+├── backups/              # Backup files created
+├── icons/                # Icon files used by program
+└── __pycache__/          # Python cache files
 ```
 
 ## 🔧 Configuration
 
 The application creates local configuration files for:
-- User preferences
-- Program database
-- Application settings
+- User preferences and settings
+- Program database with project information
+- Theme configurations
+- Execution history
+- Code analysis cache
 
 These files are automatically created on first run and stored locally.
+
+## ✨ Advanced Features
+
+### Code Analysis
+- **Method Analysis**: Detailed breakdown of Python functions and methods
+- **Dependency Tracking**: Visualize and manage project dependencies  
+- **Code Structure Analysis**: Review code organization and complexity metrics
+
+### Editor Capabilities
+- **Syntax Highlighting**: Full Python syntax support
+- **Code Execution**: Run Python scripts directly from the editor
+- **Multiple File Support**: Work with multiple Python files simultaneously
+
+### User Interface
+- **Multiple Themes**: Choose from various visual themes
+- **Context Menus**: Quick access to common operations
+- **History Tracking**: Keep track of executed programs and modifications
 
 ## 🖥️ Platform Support
 
