@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
 import tkinter as tk # Sadece messagebox için
 from tkinter import messagebox
 import os
@@ -59,12 +60,8 @@ class ExecutionManager:
             )
 
             # Popen kullanıldığında, programın bitmesini beklemiyoruz.
-            # Bu nedenle returncode kontrolü ve çıktı/hata yakalama kısmı kaldırılmalıdır
-            # veya ayrı bir iş parçacığında (thread) veya non-blocking yöntemlerle yapılmalıdır.
-            # Şimdilik sadece programın başlatıldığı bilgisini veriyoruz.
-            print(f"✅ Program başlatıldı (eş zamanlı): {file_path}")
-            # İsteğe bağlı: Başlatılan process objesini saklayıp daha sonra kontrol edebilirsiniz.
-            # self.app.running_processes.append(process) # App sınıfında bir liste tutulabilir
+            simdi = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+            print(f"✅ {simdi} Program başlatıldı (eş zamanlı): {file_path}")
 
         except FileNotFoundError:
              messagebox.showerror("Hata", f"Python yorumlayıcısı bulunamadı:\n{sys.executable}\nLütfen Python kurulumunuzu kontrol edin.", parent=self.app)

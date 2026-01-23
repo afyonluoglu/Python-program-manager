@@ -849,6 +849,12 @@ class App(tk.Tk):
             # Markdown formatlaması için tag'ler tanımla
             self._configure_markdown_tags(text_widget)
             
+            # Markdown dosyasının dizinini sakla (resimler için)
+            self._current_md_dir = os.path.dirname(os.path.abspath(file_path))
+            
+            # Resimleri temizle
+            self._md_images = []
+            
             # Markdown içeriğini formatla ve ekle
             self._format_markdown_content(text_widget, markdown_content)
             
@@ -911,22 +917,32 @@ class App(tk.Tk):
 
     def _configure_markdown_tags(self, text_widget):
         """Markdown formatlaması için Text widget tag'lerini yapılandırır."""
-        # Başlıklar
-        text_widget.tag_configure("h1", font=("Segoe UI", 20, "bold"), foreground="#1A1A1A", spacing1=10, spacing3=5)
-        text_widget.tag_configure("h2", font=("Segoe UI", 16, "bold"), foreground="#1A1A1A", spacing1=8, spacing3=4)
-        text_widget.tag_configure("h3", font=("Segoe UI", 14, "bold"), foreground="#1A1A1A", spacing1=6, spacing3=3)
-        text_widget.tag_configure("h4", font=("Segoe UI", 12, "bold"), foreground="#1A1A1A", spacing1=4, spacing3=2)
-        text_widget.tag_configure("h5", font=("Segoe UI", 11, "bold"), foreground="#1A1A1A", spacing1=3, spacing3=2)
-        text_widget.tag_configure("h6", font=("Segoe UI", 10, "bold"), foreground="#6A737D", spacing1=2, spacing3=1)
+        # Başlıklar (H1-H6)
+        text_widget.tag_configure("h1", font=("Segoe UI", 24, "bold"), foreground="#1A1A1A", 
+                                 spacing1=15, spacing3=8, underline=False)
+        text_widget.tag_configure("h2", font=("Segoe UI", 20, "bold"), foreground="#1A1A1A", 
+                                 spacing1=12, spacing3=6)
+        text_widget.tag_configure("h3", font=("Segoe UI", 16, "bold"), foreground="#1A1A1A", 
+                                 spacing1=10, spacing3=5)
+        text_widget.tag_configure("h4", font=("Segoe UI", 14, "bold"), foreground="#333333", 
+                                 spacing1=8, spacing3=4)
+        text_widget.tag_configure("h5", font=("Segoe UI", 12, "bold"), foreground="#444444", 
+                                 spacing1=6, spacing3=3)
+        text_widget.tag_configure("h6", font=("Segoe UI", 11, "bold"), foreground="#6A737D", 
+                                 spacing1=4, spacing3=2)
         
         # Kod blokları
-        text_widget.tag_configure("code_block", font=("Consolas", 10), background="#F6F8FA", 
-                                 relief="solid", borderwidth=1, lmargin1=20, lmargin2=20, 
-                                 rmargin=20, spacing1=5, spacing3=5)
+        text_widget.tag_configure("code_block", font=("Consolas", 10), background="#1E1E1E", 
+                                 foreground="#D4D4D4", relief="solid", borderwidth=1, 
+                                 lmargin1=20, lmargin2=20, rmargin=20, spacing1=5, spacing3=5)
+        
+        # Kod dili etiketi
+        text_widget.tag_configure("code_lang", font=("Consolas", 9, "italic"), 
+                                 background="#2D2D2D", foreground="#9CDCFE")
         
         # Satır içi kod
-        text_widget.tag_configure("inline_code", font=("Consolas", 10), background="#F3F4F6", 
-                                 relief="solid", borderwidth=1)
+        text_widget.tag_configure("inline_code", font=("Consolas", 10), background="#E8E8E8", 
+                                 foreground="#C7254E")
         
         # Kalın metin
         text_widget.tag_configure("bold", font=("Segoe UI", 11, "bold"))
@@ -934,23 +950,60 @@ class App(tk.Tk):
         # İtalik metin
         text_widget.tag_configure("italic", font=("Segoe UI", 11, "italic"))
         
+        # Kalın + İtalik
+        text_widget.tag_configure("bold_italic", font=("Segoe UI", 11, "bold italic"))
+        
+        # Üstü çizili
+        text_widget.tag_configure("strikethrough", overstrike=True, foreground="#6A737D")
+        
         # Liste öğeleri
         text_widget.tag_configure("list_item", lmargin1=30, lmargin2=50, spacing1=2)
+        text_widget.tag_configure("list_item_l2", lmargin1=50, lmargin2=70, spacing1=2)
+        text_widget.tag_configure("list_item_l3", lmargin1=70, lmargin2=90, spacing1=2)
         
         # Alıntı
-        text_widget.tag_configure("blockquote", lmargin1=20, lmargin2=20, rmargin=20, 
-                                 background="#F6F8FA", relief="solid", borderwidth=1, 
+        text_widget.tag_configure("blockquote", lmargin1=20, lmargin2=25, rmargin=20, 
+                                 background="#F6F8FA", relief="flat", borderwidth=0, 
                                  foreground="#6A737D", spacing1=5, spacing3=5)
+        text_widget.tag_configure("blockquote_bar", background="#DFE2E5", foreground="#DFE2E5")
         
-        # Link
+        # Link - tıklanabilir
         text_widget.tag_configure("link", foreground="#0366D6", underline=True)
+        text_widget.tag_bind("link", "<Enter>", lambda e: text_widget.configure(cursor="hand2"))
+        text_widget.tag_bind("link", "<Leave>", lambda e: text_widget.configure(cursor=""))
         
         # Yatay çizgi
-        text_widget.tag_configure("hr", relief="solid", borderwidth=1, background="#E1E4E8")
+        text_widget.tag_configure("hr", foreground="#E1E4E8", spacing1=10, spacing3=10)
+        
+        # Tablo stilleri - Monospace font ile hizalı gösterim
+        text_widget.tag_configure("table_header", font=("Consolas", 10, "bold"), 
+                                 background="#F1F8FF", foreground="#24292E")
+        text_widget.tag_configure("table_cell", font=("Consolas", 10), 
+                                 background="#FFFFFF", foreground="#24292E")
+        text_widget.tag_configure("table_cell_alt", font=("Consolas", 10), 
+                                 background="#F6F8FA", foreground="#24292E")
+        text_widget.tag_configure("table_border", font=("Consolas", 10), foreground="#0366D6")
+        
+        # Resim placeholder
+        text_widget.tag_configure("image_placeholder", font=("Segoe UI", 10, "italic"), 
+                                 background="#F0F7FF", foreground="#0366D6", relief="solid", 
+                                 borderwidth=1, spacing1=5, spacing3=5)
+        
+        # HTML tag'leri
+        text_widget.tag_configure("html_tag", foreground="#22863A", font=("Consolas", 10))
+        text_widget.tag_configure("html_content", foreground="#24292E")
+        
+        # Checkbox
+        text_widget.tag_configure("checkbox_checked", foreground="#22863A")
+        text_widget.tag_configure("checkbox_unchecked", foreground="#6A737D")
 
     def _format_markdown_content(self, text_widget, content):
         """Markdown içeriğini Text widget'a formatlanmış olarak ekler."""
         import re
+        
+        # Link URL'lerini saklama
+        self._link_urls = {}
+        self._link_counter = 0
         
         lines = content.split('\n')
         i = 0
@@ -960,7 +1013,6 @@ class App(tk.Tk):
             
             # Kod blokları (```)
             if line.strip().startswith('```'):
-                # Kod bloğu başlangıcı
                 lang = line.strip()[3:].strip()
                 code_lines = []
                 i += 1
@@ -972,83 +1024,447 @@ class App(tk.Tk):
                 if code_lines:
                     code_text = '\n'.join(code_lines) + '\n'
                     if lang:
-                        text_widget.insert(tk.END, f"[{lang}]\n", "inline_code")
+                        text_widget.insert(tk.END, f" {lang} \n", "code_lang")
                     text_widget.insert(tk.END, code_text, "code_block")
+                    text_widget.insert(tk.END, "\n")
                 i += 1
                 continue
             
-            # Başlıklar
-            if line.startswith('#'):
-                level = len(line) - len(line.lstrip('#'))
-                if level <= 6:
-                    header_text = line.lstrip('#').strip() + '\n'
-                    text_widget.insert(tk.END, header_text, f"h{level}")
-                    i += 1
+            # Tablo algılama
+            if '|' in line and i + 1 < len(lines) and re.match(r'^[\s|:-]+$', lines[i + 1]):
+                table_lines = [line]
+                j = i + 1
+                while j < len(lines) and '|' in lines[j]:
+                    table_lines.append(lines[j])
+                    j += 1
+                
+                self._render_table(text_widget, table_lines)
+                i = j
+                continue
+            
+            # Başlıklar (H1-H6)
+            header_match = re.match(r'^(#{1,6})\s+(.+)$', line)
+            if header_match:
+                level = len(header_match.group(1))
+                header_text = header_match.group(2).strip()
+                # Başlık içindeki inline formatlamayı işle
+                self._insert_inline_formatted(text_widget, header_text + '\n', f"h{level}")
+                i += 1
+                continue
+            
+            # Alternatif H1 (=====) ve H2 (-----)
+            if i + 1 < len(lines):
+                next_line = lines[i + 1].strip()
+                if next_line and all(c == '=' for c in next_line) and len(next_line) >= 3:
+                    self._insert_inline_formatted(text_widget, line.strip() + '\n', "h1")
+                    i += 2
+                    continue
+                elif next_line and all(c == '-' for c in next_line) and len(next_line) >= 3:
+                    self._insert_inline_formatted(text_widget, line.strip() + '\n', "h2")
+                    i += 2
                     continue
             
             # Yatay çizgi
-            if line.strip() in ['---', '***', '___']:
-                text_widget.insert(tk.END, '\n' + '─' * 50 + '\n\n', "hr")
+            if line.strip() in ['---', '***', '___'] or re.match(r'^[-*_]{3,}$', line.strip()):
+                text_widget.insert(tk.END, '\n' + '━' * 60 + '\n\n', "hr")
                 i += 1
                 continue
             
-            # Alıntı
+            # Resim ![alt](url) veya ![alt](url "title")
+            img_match = re.match(r'^!\[([^\]]*)\]\(([^)]+)\)', line.strip())
+            if img_match:
+                alt_text = img_match.group(1) or "Resim"
+                img_url = img_match.group(2).split()[0]  # URL ve opsiyonel title'ı ayır
+                self._render_image(text_widget, alt_text, img_url)
+                i += 1
+                continue
+            
+            # Alıntı (blockquote)
             if line.startswith('>'):
                 quote_lines = []
                 while i < len(lines) and lines[i].startswith('>'):
-                    quote_lines.append(lines[i][1:].strip())
+                    quote_text = lines[i].lstrip('>').strip()
+                    quote_lines.append(quote_text)
                     i += 1
                 
-                quote_text = '\n'.join(quote_lines) + '\n\n'
-                text_widget.insert(tk.END, quote_text, "blockquote")
+                text_widget.insert(tk.END, "┃ ", "blockquote_bar")
+                quote_content = '\n┃ '.join(quote_lines) + '\n\n'
+                text_widget.insert(tk.END, quote_content, "blockquote")
+                continue
+            
+            # Checkbox listeler
+            checkbox_match = re.match(r'^\s*[-*+]\s+\[([ xX])\]\s+(.+)$', line)
+            if checkbox_match:
+                is_checked = checkbox_match.group(1).lower() == 'x'
+                checkbox_text = checkbox_match.group(2)
+                if is_checked:
+                    text_widget.insert(tk.END, "  ☑ ", "checkbox_checked")
+                else:
+                    text_widget.insert(tk.END, "  ☐ ", "checkbox_unchecked")
+                self._insert_inline_formatted(text_widget, checkbox_text + '\n')
+                i += 1
                 continue
             
             # Liste öğeleri
-            if re.match(r'^\s*[-*+]\s+', line) or re.match(r'^\s*\d+\.\s+', line):
-                # Madde işareti veya numaralı liste
-                indent = len(line) - len(line.lstrip())
-                if re.match(r'^\s*[-*+]\s+', line):
-                    bullet = '•'
-                    content_part = re.sub(r'^\s*[-*+]\s+', '', line)
-                else:
-                    match = re.match(r'^\s*(\d+)\.\s+', line)
-                    bullet = f"{match.group(1)}."
-                    content_part = re.sub(r'^\s*\d+\.\s+', '', line)
+            list_match = re.match(r'^(\s*)([-*+]|\d+\.)\s+(.+)$', line)
+            if list_match:
+                indent = len(list_match.group(1))
+                bullet_type = list_match.group(2)
+                content_part = list_match.group(3)
                 
-                list_text = f"{' ' * (indent // 2)}{bullet} {content_part}\n"
-                text_widget.insert(tk.END, list_text, "list_item")
+                # İndent seviyesine göre tag belirle
+                if indent >= 4:
+                    list_tag = "list_item_l3"
+                    prefix = "      "
+                elif indent >= 2:
+                    list_tag = "list_item_l2"
+                    prefix = "    "
+                else:
+                    list_tag = "list_item"
+                    prefix = "  "
+                
+                if bullet_type in ['-', '*', '+']:
+                    bullet = '•'
+                else:
+                    bullet = bullet_type
+                
+                text_widget.insert(tk.END, f"{prefix}{bullet} ")
+                self._insert_inline_formatted(text_widget, content_part + '\n', list_tag)
+                i += 1
+                continue
+            
+            # Inline HTML
+            html_match = re.match(r'^<([a-zA-Z][a-zA-Z0-9]*)([^>]*)>(.*?)</\1>$', line.strip())
+            if html_match:
+                tag_name = html_match.group(1).lower()
+                html_content = html_match.group(3)
+                self._render_html_element(text_widget, tag_name, html_content)
+                i += 1
+                continue
+            
+            # Satır içi HTML (tek satırda)
+            if re.search(r'<[a-zA-Z][^>]*>', line):
+                self._insert_with_html(text_widget, line + '\n')
+                i += 1
+                continue
+            
+            # Boş satır
+            if not line.strip():
+                text_widget.insert(tk.END, '\n')
                 i += 1
                 continue
             
             # Normal paragraf - satır içi formatlamalar
-            formatted_line = self._format_inline_markdown(line + '\n')
-            text_widget.insert(tk.END, formatted_line[0], formatted_line[1] if len(formatted_line) > 1 else None)
-            
+            self._insert_inline_formatted(text_widget, line + '\n')
             i += 1
-
-    def _format_inline_markdown(self, text):
-        """Satır içi markdown formatlamalarını uygular."""
+    
+    def _render_table(self, text_widget, table_lines):
+        """Markdown tablosunu render eder."""
         import re
         
-        # Satır içi kod (`kod`)
-        text = re.sub(r'`([^`]+)`', lambda m: f"[CODE]{m.group(1)}[/CODE]", text)
+        if len(table_lines) < 2:
+            return
         
-        # Kalın metin (**bold** veya __bold__)
-        text = re.sub(r'\*\*([^*]+)\*\*', lambda m: f"[BOLD]{m.group(1)}[/BOLD]", text)
-        text = re.sub(r'__([^_]+)__', lambda m: f"[BOLD]{m.group(1)}[/BOLD]", text)
+        # Tablo verilerini parse et
+        def parse_row(row):
+            cells = [c.strip() for c in row.split('|')]
+            # Başındaki ve sonundaki boş hücreleri kaldır
+            if cells and not cells[0]:
+                cells = cells[1:]
+            if cells and not cells[-1]:
+                cells = cells[:-1]
+            return cells
         
-        # İtalik metin (*italic* veya _italic_)
-        text = re.sub(r'\*([^*]+)\*', lambda m: f"[ITALIC]{m.group(1)}[/ITALIC]", text)
-        text = re.sub(r'_([^_]+)_', lambda m: f"[ITALIC]{m.group(1)}[/ITALIC]", text)
+        headers = parse_row(table_lines[0])
+        # 2. satır ayraç satırı, atla
+        data_rows = [parse_row(row) for row in table_lines[2:] if row.strip()]
         
-        # Linkler [text](url)
-        text = re.sub(r'\[([^\]]+)\]\([^)]+\)', lambda m: f"[LINK]{m.group(1)}[/LINK]", text)
+        # Sütun genişliklerini hesapla
+        col_widths = []
+        for i in range(len(headers)):
+            max_width = len(headers[i])
+            for row in data_rows:
+                if i < len(row):
+                    max_width = max(max_width, len(row[i]))
+            col_widths.append(min(max_width + 2, 40))  # Max 40 karakter
         
-        # Basit formatting için tuple döndür
-        if any(tag in text for tag in ['[CODE]', '[BOLD]', '[ITALIC]', '[LINK]']):
-            return (text, "formatted")
-        else:
-            return (text,)
+        # Üst kenarlık
+        border_top = "┌" + "┬".join("─" * w for w in col_widths) + "┐\n"
+        text_widget.insert(tk.END, border_top, "table_border")
+        
+        # Başlık satırı
+        header_row = "│"
+        for i, header in enumerate(headers):
+            width = col_widths[i] if i < len(col_widths) else 20
+            header_row += header.center(width) + "│"
+        text_widget.insert(tk.END, header_row + "\n", "table_header")
+        
+        # Başlık-veri ayracı
+        border_mid = "├" + "┼".join("─" * w for w in col_widths) + "┤\n"
+        text_widget.insert(tk.END, border_mid, "table_border")
+        
+        # Veri satırları
+        for row_idx, row in enumerate(data_rows):
+            data_row = "│"
+            for i in range(len(headers)):
+                width = col_widths[i] if i < len(col_widths) else 20
+                cell_content = row[i] if i < len(row) else ""
+                data_row += cell_content.ljust(width) + "│"
+            
+            tag = "table_cell_alt" if row_idx % 2 == 1 else "table_cell"
+            text_widget.insert(tk.END, data_row + "\n", tag)
+        
+        # Alt kenarlık
+        border_bottom = "└" + "┴".join("─" * w for w in col_widths) + "┘\n\n"
+        text_widget.insert(tk.END, border_bottom, "table_border")
+    
+    def _render_image(self, text_widget, alt_text, img_url):
+        """Resim gösterir. Gerçek resim göstermek için PIL/Pillow gerekir."""
+        try:
+            from PIL import Image, ImageTk
+            import urllib.request
+            import io
+            
+            img = None
+            resolved_path = img_url
+            
+            # URL mi yoksa yerel dosya mı?
+            if img_url.startswith(('http://', 'https://')):
+                # URL'den resim yükle
+                try:
+                    request = urllib.request.Request(
+                        img_url,
+                        headers={'User-Agent': 'Mozilla/5.0'}
+                    )
+                    with urllib.request.urlopen(request, timeout=10) as response:
+                        image_data = response.read()
+                    img = Image.open(io.BytesIO(image_data))
+                except Exception as url_err:
+                    raise Exception(f"URL'den resim yüklenemedi: {url_err}")
+            else:
+                # Yerel dosya - göreceli yolu çöz
+                # URL encoding'i decode et (%20 -> boşluk)
+                import urllib.parse
+                decoded_url = urllib.parse.unquote(img_url)
+                
+                # Eğer mutlak yol değilse, markdown dosyasının dizinine göre çöz
+                if not os.path.isabs(decoded_url):
+                    if hasattr(self, '_current_md_dir') and self._current_md_dir:
+                        resolved_path = os.path.normpath(
+                            os.path.join(self._current_md_dir, decoded_url)
+                        )
+                    else:
+                        resolved_path = decoded_url
+                else:
+                    resolved_path = decoded_url
+                
+                # Dosyanın varlığını kontrol et
+                if not os.path.exists(resolved_path):
+                    raise Exception(f"Dosya bulunamadı: {resolved_path}")
+                
+                img = Image.open(resolved_path)
+            
+            # Resmi maksimum genişliğe sığdır
+            max_width = 600
+            if img.width > max_width:
+                ratio = max_width / img.width
+                new_size = (max_width, int(img.height * ratio))
+                img = img.resize(new_size, Image.Resampling.LANCZOS)
+            
+            # RGBA ise RGB'ye dönüştür (bazı formatlar için gerekli)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                # Alfa kanalı varsa beyaz arka plan ile birleştir
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # PhotoImage oluştur
+            photo = ImageTk.PhotoImage(img)
+            
+            # Resmi sakla (garbage collection'dan korumak için)
+            if not hasattr(self, '_md_images'):
+                self._md_images = []
+            self._md_images.append(photo)
+            
+            # Resmi ekle
+            text_widget.insert(tk.END, "\n")
+            text_widget.image_create(tk.END, image=photo)
+            if alt_text:
+                text_widget.insert(tk.END, f"\n{alt_text}", "image_placeholder")
+            text_widget.insert(tk.END, "\n\n")
+            
+        except ImportError:
+            # PIL/Pillow yüklü değil
+            placeholder = f"\n🖼️ [{alt_text}]\n   📎 {img_url}\n   ⚠️ Resim görüntüleme için Pillow kütüphanesi gerekli:\n   pip install Pillow\n\n"
+            text_widget.insert(tk.END, placeholder, "image_placeholder")
+        except Exception as e:
+            # Diğer hatalar
+            placeholder = f"\n🖼️ [{alt_text}]\n   📎 {img_url}\n   ❌ Hata: {str(e)}\n\n"
+            text_widget.insert(tk.END, placeholder, "image_placeholder")
+    
+    def _render_html_element(self, text_widget, tag_name, content):
+        """Basit HTML elementlerini render eder."""
+        html_tag_map = {
+            'b': 'bold',
+            'strong': 'bold',
+            'i': 'italic',
+            'em': 'italic',
+            'u': 'link',  # Altı çizili için link tag'ini kullan
+            's': 'strikethrough',
+            'del': 'strikethrough',
+            'strike': 'strikethrough',
+            'code': 'inline_code',
+            'pre': 'code_block',
+            'h1': 'h1',
+            'h2': 'h2',
+            'h3': 'h3',
+            'h4': 'h4',
+            'h5': 'h5',
+            'h6': 'h6',
+        }
+        
+        tag = html_tag_map.get(tag_name, 'html_content')
+        text_widget.insert(tk.END, content + '\n', tag)
+    
+    def _insert_with_html(self, text_widget, line):
+        """Satır içi HTML içeren metni işler."""
+        import re
+        
+        # HTML tag'lerini bul ve işle
+        pattern = r'<([a-zA-Z][a-zA-Z0-9]*)(?:[^>]*)>(.*?)</\1>'
+        last_end = 0
+        
+        for match in re.finditer(pattern, line):
+            # Tag'den önceki metin
+            if match.start() > last_end:
+                before_text = line[last_end:match.start()]
+                self._insert_inline_formatted(text_widget, before_text)
+            
+            # HTML elementi
+            tag_name = match.group(1).lower()
+            content = match.group(2)
+            self._render_html_element(text_widget, tag_name, content)
+            
+            last_end = match.end()
+        
+        # Kalan metin
+        if last_end < len(line):
+            remaining = line[last_end:]
+            self._insert_inline_formatted(text_widget, remaining)
+    
+    def _insert_inline_formatted(self, text_widget, text, base_tag=None):
+        """Satır içi markdown formatlamalarını uygulayarak text ekler."""
+        import re
+        
+        # İşlenecek segmentler listesi: [(text, tags), ...]
+        segments = []
+        current_pos = 0
+        original_text = text
+        
+        # Tüm pattern'leri bul ve sırala
+        patterns = [
+            # Satır içi resim
+            (r'!\[([^\]]*)\]\(([^)]+)\)', 'image'),
+            # Link
+            (r'\[([^\]]+)\]\(([^)]+)\)', 'link'),
+            # Satır içi kod
+            (r'`([^`]+)`', 'inline_code'),
+            # Kalın + İtalik
+            (r'\*\*\*([^*]+)\*\*\*', 'bold_italic'),
+            (r'___([^_]+)___', 'bold_italic'),
+            # Kalın
+            (r'\*\*([^*]+)\*\*', 'bold'),
+            (r'__([^_]+)__', 'bold'),
+            # İtalik
+            (r'\*([^*]+)\*', 'italic'),
+            (r'_([^_]+)_', 'italic'),
+            # Üstü çizili
+            (r'~~([^~]+)~~', 'strikethrough'),
+        ]
+        
+        # Tüm eşleşmeleri bul
+        all_matches = []
+        for pattern, tag_type in patterns:
+            for match in re.finditer(pattern, text):
+                all_matches.append((match.start(), match.end(), match, tag_type))
+        
+        # Başlangıç pozisyonuna göre sırala
+        all_matches.sort(key=lambda x: x[0])
+        
+        # Çakışan eşleşmeleri filtrele
+        filtered_matches = []
+        last_end = 0
+        for start, end, match, tag_type in all_matches:
+            if start >= last_end:
+                filtered_matches.append((start, end, match, tag_type))
+                last_end = end
+        
+        # Segmentleri oluştur
+        current_pos = 0
+        for start, end, match, tag_type in filtered_matches:
+            # Önceki düz metin
+            if start > current_pos:
+                plain_text = text[current_pos:start]
+                if base_tag:
+                    text_widget.insert(tk.END, plain_text, base_tag)
+                else:
+                    text_widget.insert(tk.END, plain_text)
+            
+            # Formatlanmış içerik
+            if tag_type == 'image':
+                alt_text = match.group(1) or "Resim"
+                img_url = match.group(2)
+                text_widget.insert(tk.END, f"🖼️[{alt_text}]", "image_placeholder")
+            elif tag_type == 'link':
+                link_text = match.group(1)
+                link_url = match.group(2)
+                # Tıklanabilir link oluştur
+                link_tag = f"link_{self._link_counter}"
+                self._link_counter += 1
+                self._link_urls[link_tag] = link_url
+                
+                text_widget.tag_configure(link_tag, foreground="#0366D6", underline=True)
+                text_widget.tag_bind(link_tag, "<Button-1>", 
+                                    lambda e, url=link_url: self._open_link(url))
+                text_widget.tag_bind(link_tag, "<Enter>", 
+                                    lambda e: text_widget.configure(cursor="hand2"))
+                text_widget.tag_bind(link_tag, "<Leave>", 
+                                    lambda e: text_widget.configure(cursor=""))
+                
+                if base_tag:
+                    text_widget.insert(tk.END, link_text, (base_tag, link_tag))
+                else:
+                    text_widget.insert(tk.END, link_text, link_tag)
+            else:
+                content = match.group(1)
+                if base_tag:
+                    text_widget.insert(tk.END, content, (base_tag, tag_type))
+                else:
+                    text_widget.insert(tk.END, content, tag_type)
+            
+            current_pos = end
+        
+        # Kalan düz metin
+        if current_pos < len(text):
+            remaining = text[current_pos:]
+            if base_tag:
+                text_widget.insert(tk.END, remaining, base_tag)
+            else:
+                text_widget.insert(tk.END, remaining)
+    
+    def _open_link(self, url):
+        """Link'i varsayılan tarayıcıda açar."""
+        import webbrowser
+        try:
+            webbrowser.open(url)
+        except Exception as e:
+            print(f"Link açılamadı: {e}")
+
+
 
     def _show_json_viewer(self, file_path):
         """JSON dosyasını formatlı olarak gösteren pencere açar."""
@@ -1170,12 +1586,24 @@ class App(tk.Tk):
         
     def show_folder_properties(self, folder_path):
         def calculate_folder_size(folder_path):
+            def count_lines_in_python_file(file_path):
+                """Belirtilen Python dosyasındaki toplam satır sayısını döner."""
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as file:
+                        satir = sum(1 for _ in file)
+                        print(f"   - {os.path.basename(file_path)}: {satir} satır")
+                        return satir  # Dosyadaki toplam satır sayısını hesapla
+                except Exception as e:
+                    print(f"❗ Hata: {file_path} dosyasındaki satır sayısı hesaplanırken bir hata oluştu: {e}")
+                    return None            
+            
             """Calculate the total size of a folder, including its files and subfolders."""
             total_size = 0
             total_python_size = 0
             total_zip_size = 0
             file_count = 0
             py_file_count = 0  
+            py_line_count = 0
             zip_file_count = 0
             for dirpath, dirnames, filenames in os.walk(folder_path):
                 for file in filenames:
@@ -1185,19 +1613,21 @@ class App(tk.Tk):
                         file_count += 1
                     if os.path.splitext(file)[1].lower() == ".py":
                         py_file_count += 1
+                        py_line_count += count_lines_in_python_file(file_path)
                         total_python_size += os.path.getsize(file_path)
                     if os.path.splitext(file)[1].lower() == ".zip":
                         zip_file_count += 1
                         total_zip_size += os.path.getsize(file_path)
-            return total_size, total_python_size, file_count, py_file_count, zip_file_count, total_zip_size
+            return total_size, total_python_size, file_count, py_file_count, py_line_count, zip_file_count, total_zip_size
 
         """Open a folder dialog, calculate its size, and display the result."""
         # print(f"🔸 '{folder_path}' Klasör özellikleri hesaplanıyor... ")
-        folder_size, total_python_size, file_count, py_file_count, zip_file_count, total_zip_size = calculate_folder_size(folder_path)
+        folder_size, total_python_size, file_count, py_file_count, py_line_count, zip_file_count, total_zip_size = calculate_folder_size(folder_path)
         sonuc = self.format_file_size(folder_size)
         sonuc = f"Folder: {folder_path}\n\n" + \
                  f"Number of files: {file_count:,}\nTotal Folder Size: {self.format_file_size(folder_size)}\n\n" + \
-                 f"Number of Python files: {py_file_count:,}\nTotal Python Size: {self.format_file_size(total_python_size)}\n\n" + \
+                 f"Number of Python files: {py_file_count:,}\nTotal Python Size: {self.format_file_size(total_python_size)}\n" + \
+                 f"Total Python Code Lines: {py_line_count:,}\n\n" + \
                  f"Number of ZIP files: {zip_file_count:,}\nTotal ZIP Size: {self.format_file_size(total_zip_size)}"
 
         messagebox.showinfo("Folder Properties",  sonuc)
