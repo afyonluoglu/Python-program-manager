@@ -100,12 +100,13 @@ class SearchManager:
         dialog.update_idletasks()
         x = (dialog.winfo_screenwidth() // 2) - (450 // 2)
         y = (dialog.winfo_screenheight() // 2) - (270 // 2)
-        dialog.geometry(f"450x270+{x}+{y}")
+        dialog.geometry(f"450x320+{x}+{y}")
         
         # Değişkenler
         search_pattern_var = tk.StringVar()
         file_size_var = tk.StringVar()
         size_operator_var = tk.StringVar(value="eşit")
+        search_in_excluded_var = tk.BooleanVar(value=False)  # Varsayılan: Hariç tutulanlarda arama
         
         # Ana frame
         main_frame = ttk.Frame(dialog, padding="10")
@@ -138,11 +139,15 @@ class SearchManager:
                                 state="readonly", width=10)
         size_combo.pack(side=tk.LEFT)
         
+        # Hariç tutulanlarda da ara checkbox
+        ttk.Checkbutton(main_frame, text="Hariç Tutulanlarda da Ara", 
+                       variable=search_in_excluded_var).pack(anchor=tk.W, pady=(0, 10))
+        
         # Butonlar
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(10, 0))
         
-        result = {"search_pattern": None, "file_size": None, "size_operator": None}
+        result = {"search_pattern": None, "file_size": None, "size_operator": None, "search_in_excluded": False}
         
         def on_ok():
             if not search_pattern_var.get().strip():
@@ -163,6 +168,7 @@ class SearchManager:
                     return
             
             result["search_pattern"] = search_pattern_var.get().strip()
+            result["search_in_excluded"] = search_in_excluded_var.get()
             dialog.destroy()
         
         def on_cancel():
@@ -188,7 +194,7 @@ class SearchManager:
 
             thread = threading.Thread(target=operations.perform_search_in_thread,
                                     args=(self.app, result["search_pattern"], search_root_folder, 
-                                            result["file_size"], result["size_operator"]))
+                                            result["file_size"], result["size_operator"], result["search_in_excluded"]))
             thread.daemon = True
             
             size_info = ""
@@ -265,6 +271,7 @@ class SearchManager:
         search_word_var = tk.StringVar()
         file_size_var = tk.StringVar()
         size_operator_var = tk.StringVar(value="eşit")
+        search_in_excluded_var = tk.BooleanVar(value=False)  # Varsayılan: Hariç tutulanlarda arama
         
         # Ana frame
         main_frame = ttk.Frame(dialog, padding="10")
@@ -293,11 +300,15 @@ class SearchManager:
                                 state="readonly", width=10)
         size_combo.pack(side=tk.LEFT)
         
+        # Hariç tutulanlarda da ara checkbox
+        ttk.Checkbutton(main_frame, text="Hariç Tutulanlarda da Ara", 
+                       variable=search_in_excluded_var).pack(anchor=tk.W, pady=(0, 10))
+        
         # Butonlar
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(10, 0))
         
-        result = {"search_word": None, "file_size": None, "size_operator": None}
+        result = {"search_word": None, "file_size": None, "size_operator": None, "search_in_excluded": False}
         
         def on_ok():
             if not search_word_var.get().strip():
@@ -318,6 +329,7 @@ class SearchManager:
                     return
             
             result["search_word"] = search_word_var.get().strip()
+            result["search_in_excluded"] = search_in_excluded_var.get()
             dialog.destroy()
         
         def on_cancel():
@@ -343,7 +355,7 @@ class SearchManager:
             
             thread = threading.Thread(target=operations.perform_word_search_in_thread,
                                     args=(self.app, result["search_word"], search_root_folder, 
-                                            result["file_size"], result["size_operator"]))
+                                            result["file_size"], result["size_operator"], result["search_in_excluded"]))
             thread.daemon = True
             
             size_info = ""

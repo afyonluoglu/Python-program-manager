@@ -28,6 +28,7 @@ from ui_manager import UIManager # Yeni import
 from execution_manager import ExecutionManager # Yeni import
 from python_analyzer import PythonAnalyzer, DependencyAnalyzer # Python dosya analizi için
 import operations # operations.py'deki fonksiyonları kullanmak için
+from exclusion_utils import ExclusionManager # Merkezi exclusion yönetimi
 from metod_analiz import MethodAnalyzer  # Bu import'u dosyanın başına ekleyin
 from python_editor import PythonEditor  # Python editörü için yeni import
 from custom_widgets import ColoredContextMenu  # Import ekleyin
@@ -1585,50 +1586,109 @@ class App(tk.Tk):
             return f"{size_bytes / (1024 ** 3):,.2f} GB"
         
     def show_folder_properties(self, folder_path):
+        # Global exclusion list'i al ve ExclusionManager oluştur
+        global_exclusion = self.db.get_global_exclusion_list() or ""
+        exclusion_manager = ExclusionManager(global_exclusion)
+        
+        debug_info = exclusion_manager.get_debug_info()
+        print(f"🔧 DEBUG: Klasör pattern'leri: {debug_info['dir_patterns']}")
+        print(f"🔧 DEBUG: Dosya pattern'leri: {debug_info['file_patterns']}")
+        
         def calculate_folder_size(folder_path):
-            def count_lines_in_python_file(file_path):
-                """Belirtilen Python dosyasındaki toplam satır sayısını döner."""
+            def count_lines_in_a_file(file_number, file_path):
+                """Belirtilen dosyadaki toplam satır sayısını döner."""
                 try:
                     with open(file_path, 'r', encoding='utf-8') as file:
                         satir = sum(1 for _ in file)
-                        print(f"   - {os.path.basename(file_path)}: {satir} satır")
-                        return satir  # Dosyadaki toplam satır sayısını hesapla
+                        # print(f"({file_number}) : {file_path}: {satir} satır")                        
+                        # print(f"   count_lines_in_a_file - {file_number}: {os.path.basename(file_path)}: {satir} satır")
+                        return satir
                 except Exception as e:
                     print(f"❗ Hata: {file_path} dosyasındaki satır sayısı hesaplanırken bir hata oluştu: {e}")
-                    return None            
+                    return 0
             
             """Calculate the total size of a folder, including its files and subfolders."""
             total_size = 0
             total_python_size = 0
             total_zip_size = 0
+            total_HTML_size = 0
             file_count = 0
             py_file_count = 0  
-            py_line_count = 0
             zip_file_count = 0
-            for dirpath, dirnames, filenames in os.walk(folder_path):
+            HTML_file_count = 0
+            py_line_count = 0
+            HTML_line_count = 0
+            excluded_file_count = 0
+            excluded_dir_count = 0
+            
+            for dirpath, dirnames, filenames in os.walk(folder_path, topdown=True):
+                # Hariç tutulan klasörleri dirnames listesinden çıkar
+                dirs_to_remove = []
+                for dir_name in dirnames:
+                    if exclusion_manager.should_exclude_dir(dir_name):
+                        dirs_to_remove.append(dir_name)
+                        excluded_dir_count += 1
+                        excluded_dir_path = os.path.join(dirpath, dir_name)
+                        # Hariç tutulan klasördeki dosyaları da say
+                        excluded_file_count += exclusion_manager.count_files_in_dir(excluded_dir_path)
+                        # print(f"🔧 DEBUG: Klasör hariç tutuluyor (Özellikler): {excluded_dir_path}")
+                
+                for d in dirs_to_remove:
+                    dirnames.remove(d)
+                
                 for file in filenames:
                     file_path = os.path.join(dirpath, file)
+                    
+                    # Exclusion kontrolü (sadece dosya adı pattern'leri için)
+                    if exclusion_manager.should_exclude_file(file):
+                        excluded_file_count += 1
+                        # print(f"🔧 DEBUG: Dosya hariç tutuluyor (Özellikler): {file_path}")
+                        continue
+                    
                     if os.path.isfile(file_path):
                         total_size += os.path.getsize(file_path)
                         file_count += 1
                     if os.path.splitext(file)[1].lower() == ".py":
                         py_file_count += 1
-                        py_line_count += count_lines_in_python_file(file_path)
+                        py_line_count += count_lines_in_a_file(py_file_count, file_path)
                         total_python_size += os.path.getsize(file_path)
                     if os.path.splitext(file)[1].lower() == ".zip":
                         zip_file_count += 1
                         total_zip_size += os.path.getsize(file_path)
-            return total_size, total_python_size, file_count, py_file_count, py_line_count, zip_file_count, total_zip_size
+                    if os.path.splitext(file)[1].lower() == ".html":
+                        HTML_file_count += 1
+                        HTML_line_count += count_lines_in_a_file(HTML_file_count, file_path)
+                        total_HTML_size += os.path.getsize(file_path)
+            
+            return (total_size, total_python_size, total_HTML_size, file_count, py_file_count, 
+                    HTML_file_count, py_line_count, HTML_line_count, zip_file_count, total_zip_size, 
+                    HTML_file_count, total_HTML_size, excluded_file_count, excluded_dir_count)
 
         """Open a folder dialog, calculate its size, and display the result."""
-        # print(f"🔸 '{folder_path}' Klasör özellikleri hesaplanıyor... ")
-        folder_size, total_python_size, file_count, py_file_count, py_line_count, zip_file_count, total_zip_size = calculate_folder_size(folder_path)
-        sonuc = self.format_file_size(folder_size)
+        print(f"🔧 DEBUG: '{folder_path}' Klasör özellikleri hesaplanıyor...")
+        print(f"🔧 DEBUG: Global exclusion list: {exclusion_manager.raw_patterns}")
+        
+        (folder_size, total_python_size, total_HTML_size, file_count, py_file_count, 
+         HTML_file_count, py_line_count, HTML_line_count, zip_file_count, total_zip_size, 
+         _, _, excluded_file_count, excluded_dir_count) = calculate_folder_size(folder_path)
+        
+        result_HTML = f"Number of HTML files: {HTML_file_count:,}\nTotal HTML Size: {self.format_file_size(total_HTML_size)}\n" + \
+                f"Total HTML Line Count: {HTML_line_count:,}" if HTML_file_count > 0 else ""
+        
+        result_ZIP = f"Number of ZIP files: {zip_file_count:,}\nTotal ZIP Size: {self.format_file_size(total_zip_size)}\n\n" if zip_file_count > 0 else ""
+
+        # Hariç tutulan öğeler bilgisi
+        exclusion_info = ""
+        if excluded_file_count > 0 or excluded_dir_count > 0:
+            exclusion_info = f"\n\n--- Hariç Tutulanlar ---\nKlasör: {excluded_dir_count:,}\nDosya: {excluded_file_count:,}\n"
+
         sonuc = f"Folder: {folder_path}\n\n" + \
                  f"Number of files: {file_count:,}\nTotal Folder Size: {self.format_file_size(folder_size)}\n\n" + \
                  f"Number of Python files: {py_file_count:,}\nTotal Python Size: {self.format_file_size(total_python_size)}\n" + \
                  f"Total Python Code Lines: {py_line_count:,}\n\n" + \
-                 f"Number of ZIP files: {zip_file_count:,}\nTotal ZIP Size: {self.format_file_size(total_zip_size)}"
+                 f"{result_ZIP}" + \
+                 f"{result_HTML}" + \
+                 f"{exclusion_info}"
 
         messagebox.showinfo("Folder Properties",  sonuc)
 
@@ -1693,6 +1753,11 @@ class App(tk.Tk):
 
     def edit_description(self, file_path, item_id):
         self.file_browser.edit_description(file_path, item_id) # FileBrowser üzerinden (Delegasyon)
+
+    def open_general_settings_dialog(self):
+        """Genel ayarlar penceresini açar (Exclusion List vb.)."""
+        from ui_dialogs import GeneralSettingsWindow
+        GeneralSettingsWindow(self)
 
     def open_window_settings_dialog(self):
         """Pencere geometrisi ayarlarını yönetmek için pencere açar. (Eski adı: show_window_settings)"""
@@ -1782,7 +1847,7 @@ class App(tk.Tk):
         """Yardım penceresini gösterir."""
         # Yardım içeriğini tarayıcıda aç
         import os, webbrowser
-        html_path = os.path.join(self.base_path, 'timer_help.html')
+        html_path = os.path.join(self.base_path, 'pymanager_help.html')
         if os.path.exists(html_path):
             webbrowser.open_new_tab(f'file:///{html_path.replace('\\','/')}')
         else:

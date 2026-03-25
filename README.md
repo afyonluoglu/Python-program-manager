@@ -17,6 +17,7 @@ A comprehensive desktop application for managing and organizing Python programs,
 - **User-Friendly GUI**: Built with Tkinter for cross-platform compatibility
 - **High DPI Support**: Optimized for modern high-resolution displays
 - **Lightweight**: Minimal resource usage with fast startup times
+- **Global Exclusion List**: Define files/folders to exclude from ZIP compression and folder calculations
 
 ## 📸 Screenshots
 
@@ -97,6 +98,57 @@ python main.py
 8. **Program Management**: Add, organize, and execute Python scripts
 
 ### Key Features in Detail
+
+#### Global Exclusion List (Hariç Tutma Listesi)
+
+The Global Exclusion List feature allows you to filter out unwanted files and folders from various operations throughout the application.
+
+**Accessing Settings:**
+- Navigate to **Settings > General Settings...** from the menu
+- Enter comma-separated patterns for files and folders to exclude
+
+**Supported Pattern Types:**
+
+| Pattern | Description | Examples |
+|---------|-------------|----------|
+| `__pycache__` | Exact folder name match | Excludes all `__pycache__` directories |
+| `*.pyc` | Wildcard file extension | Excludes all `.pyc` compiled files |
+| `.git` | Hidden folder/file | Excludes `.git` version control directory |
+| `dist\*.*` | Folder with all files | Excludes all files in `dist` folder |
+| `*env\*.*` | Wildcard folder pattern | Excludes `venv`, `.env`, `myenv` etc. |
+| `build` | Build output folder | Excludes build directories |
+| `node_modules` | Node.js dependencies | Excludes npm package folders |
+
+**Operations Affected by Exclusion List:**
+
+1. **ZIP Compression:**
+   - Excluded files and folders are automatically skipped during ZIP creation
+   - Before compression, the total count of excluded files is calculated
+   - User is informed about how many files will be excluded
+   - This results in smaller, cleaner archive files
+
+2. **Folder Properties:**
+   - When viewing folder properties (right-click → Folder Properties), excluded items are not counted in:
+     - Total file count
+     - Total folder size calculation
+     - Python code line count
+   - This gives you accurate metrics for your actual project files
+
+3. **Search Results Highlighting:**
+   - In both file search and content search results, files matching exclusion patterns are highlighted with a **light red background**
+   - This visual indicator helps you identify which files are normally filtered out
+   - Excluded files are still accessible - you can double-click to open them
+
+**Technical Implementation:**
+- The `ExclusionManager` class (in `exclusion_utils.py`) handles all exclusion logic
+- Uses Python's `fnmatch` module for wildcard pattern matching
+- Case-insensitive matching for cross-platform compatibility
+- Automatic path separator normalization (Windows/Unix)
+
+**Example Configuration:**
+```
+__pycache__, *.pyc, .git, build, dist, node_modules, *env\*.*, *.egg-info
+```
 
 #### Python Editor
 - Syntax highlighting for Python code

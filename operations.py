@@ -10,12 +10,23 @@ import fnmatch
 import subprocess
 import platform
 
+from exclusion_utils import ExclusionManager # Merkezi exclusion yönetimi
+
 # --- Sıkıştırma İşlemleri ---
 def perform_compression_in_thread(app_instance, abs_source_folder_path, include_subfolders,
                                   abs_zip_file_path, normcase_abs_zip_file_path,
                                   abs_backup_dir_path, normcase_abs_backup_dir_path, folder_name,
-                                  backup_dir_name, file_pattern="*.*"): # file_pattern eklendi
+                                  backup_dir_name, file_pattern="*.*", exclusion_pattern=""):
     """Sıkıştırma işlemini ayrı bir iş parçacığında gerçekleştirir."""
+    
+    # ExclusionManager oluştur
+    exclusion_manager = ExclusionManager(exclusion_pattern)
+    
+    debug_info = exclusion_manager.get_debug_info()
+    print(f"🔧 DEBUG: Sıkıştırma thread başladı")
+    print(f"🔧 DEBUG: Klasör pattern'leri: {debug_info['dir_patterns']}")
+    print(f"🔧 DEBUG: Dosya pattern'leri: {debug_info['file_patterns']}")
+    
     try:
         with zipfile.ZipFile(abs_zip_file_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
             if include_subfolders:
@@ -25,10 +36,25 @@ def perform_compression_in_thread(app_instance, abs_source_folder_path, include_
                         potential_backup_path_in_dirs = os.path.abspath(os.path.join(abs_current_root, backup_dir_name))
                         if os.path.normcase(potential_backup_path_in_dirs) == normcase_abs_backup_dir_path:
                             dirs.remove(backup_dir_name)
+                    
+                    # Hariç tutulan klasörleri dirs listesinden çıkar
+                    dirs_to_remove = []
+                    for dir_name in dirs:
+                        if exclusion_manager.should_exclude_dir(dir_name):
+                            dirs_to_remove.append(dir_name)
+                            rel_dir_path = os.path.relpath(os.path.join(abs_current_root, dir_name), abs_source_folder_path)
+                            print(f"🔧 DEBUG: Klasör hariç tutuluyor: {rel_dir_path}")
+                    
+                    for d in dirs_to_remove:
+                        dirs.remove(d)
+                    
                     for file_name in files:
                         if fnmatch.fnmatch(file_name, file_pattern): # Dosya deseni kontrolü
                             file_path_to_add = os.path.abspath(os.path.join(abs_current_root, file_name))
                             if os.path.normcase(file_path_to_add) == normcase_abs_zip_file_path:
+                                continue
+                            # Exclusion kontrolü
+                            if exclusion_manager.should_exclude_file(file_name):
                                 continue
                             arcname = os.path.relpath(file_path_to_add, abs_source_folder_path)
                             zf.write(file_path_to_add, arcname)
@@ -42,11 +68,16 @@ def perform_compression_in_thread(app_instance, abs_source_folder_path, include_
                         continue
                     if os.path.isfile(abs_item_path_to_check):
                         if fnmatch.fnmatch(item_name, file_pattern): # Dosya deseni kontrolü
+                            # Exclusion kontrolü
+                            if exclusion_manager.should_exclude_file(item_name):
+                                continue
                             zf.write(abs_item_path_to_check, item_name)
-
+        
+        print(f"🔧 DEBUG: Sıkıştırma tamamlandı: {abs_zip_file_path}")
         app_instance.after(0, app_instance._handle_compression_success, folder_name, abs_zip_file_path, abs_backup_dir_path)
 
     except Exception as e:
+        print(f"🔧 DEBUG: Sıkıştırma hatası: {e}")
         app_instance.after(0, app_instance._handle_compression_error, folder_name, e, abs_zip_file_path)
 
 # --- EXE'ye Çevirme İşlemleri ---
@@ -125,17 +156,35 @@ def perform_search_in_thread_OLD(app_instance, pattern, root_folder):
 
     app_instance.after(0, app_instance._show_search_results, found_files_details, pattern, root_folder)
 
-def perform_search_in_thread(app, search_pattern, search_root_folder, file_size=None, size_operator=None):
-    """Dosya aramayı thread içinde gerçekleştirir ve dosya boyutu filtresi uygular."""
+def perform_search_in_thread(app, search_pattern, search_root_folder, file_size=None, size_operator=None, search_in_excluded=False):
+    """Dosya aramayı thread içinde gerçekleştirir ve dosya boyutu filtresi uygular.
+    
+    Args:
+        search_in_excluded: True ise hariç tutulan klasör ve dosyalarda da arar
+    """
     try:
         found_files_details = []
         
+        # ExclusionManager oluştur
+        global_exclusion = app.db.get_global_exclusion_list() or ""
+        exclusion_manager = ExclusionManager(global_exclusion)
+        
+        print(f"🔧 DEBUG: Dosya arama başladı - search_in_excluded: {search_in_excluded}")
+        
         # Dosyaları tarar
-        for root, dirs, files in os.walk(search_root_folder):
+        for root, dirs, files in os.walk(search_root_folder, topdown=True):
+            # Hariç tutulan klasörleri atla (eğer search_in_excluded False ise)
+            if not search_in_excluded:
+                dirs[:] = [d for d in dirs if not exclusion_manager.should_exclude_dir(d)]
+            
             for file in files:
                 # Dosya adı desenini kontrol et
                 if fnmatch.fnmatch(file.lower(), search_pattern.lower()):
                     file_path = os.path.join(root, file)
+                    
+                    # Hariç tutulan dosyaları atla (eğer search_in_excluded False ise)
+                    if not search_in_excluded and exclusion_manager.is_file_excluded(file, file_path, search_root_folder):
+                        continue
                     
                     # Dosya boyutu kontrolü (eğer belirtilmişse)
                     if file_size is not None:
@@ -166,6 +215,8 @@ def perform_search_in_thread(app, search_pattern, search_root_folder, file_size=
                     except OSError:
                         continue  # Dosya bilgileri alınamıyorsa atla
         
+        print(f"🔧 DEBUG: Dosya arama tamamlandı - {len(found_files_details)} dosya bulundu")
+        
         # Ana thread'e sonucu gönder
         def show_results():
             app.search_manager._show_search_results(found_files_details, search_pattern, search_root_folder)
@@ -181,16 +232,34 @@ def perform_search_in_thread(app, search_pattern, search_root_folder, file_size=
         app.after(0, handle_error)
 
 # --- Kelime Arama İşlemleri ---
-def perform_word_search_in_thread(app, search_word, search_root_folder, file_size=None, size_operator=None):
-    """Kelime aramayı thread içinde gerçekleştirir ve dosya boyutu filtresi uygular."""
+def perform_word_search_in_thread(app, search_word, search_root_folder, file_size=None, size_operator=None, search_in_excluded=False):
+    """Kelime aramayı thread içinde gerçekleştirir ve dosya boyutu filtresi uygular.
+    
+    Args:
+        search_in_excluded: True ise hariç tutulan klasör ve dosyalarda da arar
+    """
     try:
         found_items = []
         
+        # ExclusionManager oluştur
+        global_exclusion = app.db.get_global_exclusion_list() or ""
+        exclusion_manager = ExclusionManager(global_exclusion)
+        
+        print(f"🔧 DEBUG: Kelime arama başladı - search_in_excluded: {search_in_excluded}")
+        
         # Python dosyalarını tarar
-        for root, dirs, files in os.walk(search_root_folder):
+        for root, dirs, files in os.walk(search_root_folder, topdown=True):
+            # Hariç tutulan klasörleri atla (eğer search_in_excluded False ise)
+            if not search_in_excluded:
+                dirs[:] = [d for d in dirs if not exclusion_manager.should_exclude_dir(d)]
+            
             for file in files:
                 if file.endswith('.py'):
                     file_path = os.path.join(root, file)
+                    
+                    # Hariç tutulan dosyaları atla (eğer search_in_excluded False ise)
+                    if not search_in_excluded and exclusion_manager.is_file_excluded(file, file_path, search_root_folder):
+                        continue
                     
                     # Dosya boyutu kontrolü (eğer belirtilmişse)
                     if file_size is not None:
@@ -216,6 +285,8 @@ def perform_word_search_in_thread(app, search_word, search_root_folder, file_siz
                                 found_items.append((file_path, line_num, line.strip()))
                     except (UnicodeDecodeError, PermissionError, FileNotFoundError):
                         continue  # Dosya okunamıyorsa atla
+        
+        print(f"🔧 DEBUG: Kelime arama tamamlandı - {len(found_items)} eşleşme bulundu")
         
         # Ana thread'e sonucu gönder
         def show_word_results():
@@ -230,51 +301,3 @@ def perform_word_search_in_thread(app, search_word, search_root_folder, file_siz
             app.search_manager._handle_word_search_error(error_message)
         
         app.after(0, handle_word_error)
-        
-# --- Kelime Arama İşlemleri ---
-def perform_word_search_in_thread(app, search_word, search_root_folder, file_size=None, size_operator=None):
-    """Kelime aramayı thread içinde gerçekleştirir ve dosya boyutu filtresi uygular."""
-    try:
-        found_items = []
-        
-        # Python dosyalarını tarar
-        for root, dirs, files in os.walk(search_root_folder):
-            for file in files:
-                if file.endswith('.py'):
-                    file_path = os.path.join(root, file)
-                    
-                    # Dosya boyutu kontrolü (eğer belirtilmişse)
-                    if file_size is not None:
-                        try:
-                            file_size_kb = os.path.getsize(file_path) / 1024  # KB cinsine çevir
-                            
-                            if size_operator == "büyük" and file_size_kb <= file_size:
-                                continue
-                            elif size_operator == "eşit" and abs(file_size_kb - file_size) > 0.1:  # 0.1 KB tolerans
-                                continue
-                            elif size_operator == "küçük" and file_size_kb >= file_size:
-                                continue
-                        except OSError:
-                            continue  # Dosya boyutu alınamıyorsa atla
-                    
-                    try:
-                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                            lines = f.readlines()
-                            
-                        for line_num, line in enumerate(lines, 1):
-                            if search_word.lower() in line.lower():
-                                # UI_dialogs.py'nin beklediği tuple formatında ekle
-                                found_items.append((file_path, line_num, line.strip()))
-                    except (UnicodeDecodeError, PermissionError, FileNotFoundError):
-                        continue  # Dosya okunamıyorsa atla
-        
-        # Ana thread'e sonucu gönder
-        app.after(0, lambda: app.search_manager._show_word_search_results(found_items, search_word, search_root_folder))
-        
-    except Exception as e:
-        # Hata durumunda ana thread'e hata bilgisini gönder
-        app.after(0, lambda: app.search_manager._handle_word_search_error(str(e)))
-
-
-
-    

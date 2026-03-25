@@ -7,6 +7,9 @@ import os
 import subprocess
 import sys
 import platform
+
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"		# pygame mesajını gizle
+
 import pygame # For playing MP3 files
 
 class ExecutionManager:

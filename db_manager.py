@@ -95,6 +95,12 @@ class DatabaseManager:
                 alias TEXT,
                 order_index INTEGER
             );
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS compression_exclusions (
+                folder_path TEXT PRIMARY KEY,
+                exclusion_pattern TEXT NOT NULL
+            );
             """
         ]
         for query in queries:
@@ -217,6 +223,29 @@ class DatabaseManager:
                 paths_to_order = [row['path'] for row in rows]
                 self.update_favorites_order(paths_to_order)
                 print(f"{len(paths_to_order)} favori için order_index güncellendi.")
+
+    # --- Compression Exclusions ---
+    def get_compression_exclusion(self, folder_path):
+        """Belirli bir klasör için kaydedilmiş exclusion pattern'ini döndürür."""
+        row = self._execute("SELECT exclusion_pattern FROM compression_exclusions WHERE folder_path = ?", (folder_path,), fetchone=True)
+        return row['exclusion_pattern'] if row else None
+
+    def set_compression_exclusion(self, folder_path, exclusion_pattern):
+        """Belirli bir klasör için exclusion pattern'ini kaydeder veya günceller."""
+        if exclusion_pattern and exclusion_pattern.strip():
+            self._execute("INSERT OR REPLACE INTO compression_exclusions (folder_path, exclusion_pattern) VALUES (?, ?)",
+                          (folder_path, exclusion_pattern.strip()), commit=True)
+        else:
+            self._execute("DELETE FROM compression_exclusions WHERE folder_path = ?", (folder_path,), commit=True)
+
+    # --- Global Exclusion List ---
+    def get_global_exclusion_list(self):
+        """Program genelinde uygulanacak hariç tutma listesini döndürür."""
+        return self.get_setting("global_exclusion_list", "")
+
+    def set_global_exclusion_list(self, exclusion_list):
+        """Program genelinde uygulanacak hariç tutma listesini kaydeder."""
+        self.set_setting("global_exclusion_list", exclusion_list.strip() if exclusion_list else "")
 
     def __del__(self):
         self._close()

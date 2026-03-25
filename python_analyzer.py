@@ -333,6 +333,8 @@ class PythonAnalyzer:
     def analyze_python_file(self, file_path):
         """Python dosyasını ve bağımlı kullanıcı dosyalarını analiz eder ve sonuçları bir pencerede gösterir."""
         try:
+            print(f"[DEBUG] Python Proje Analizi başlatıldı: {file_path}")
+            
             if not os.path.exists(file_path):
                 messagebox.showerror("Hata", f"Dosya bulunamadı: {file_path}", parent=self.app)
                 return
@@ -342,13 +344,19 @@ class PythonAnalyzer:
                 return
             
             # Tüm bağımlı dosyaları bul
+            print(f"[DEBUG] Bağımlı dosyalar keşfediliyor...")
             all_project_files = self._discover_project_files(file_path)
+            print(f"[DEBUG] Bulunan dosya sayısı: {len(all_project_files)}")
             
             # Dosyaları analiz et
+            print(f"[DEBUG] Proje analizi yapılıyor...")
             analysis_results = self._perform_project_analysis(file_path, all_project_files)
+            print(f"[DEBUG] Analiz tamamlandı. Toplam satır: {analysis_results['project_stats']['total_lines']}")
             
             # Sonuçları göster
+            print(f"[DEBUG] Sonuçlar penceresi açılıyor...")
             self._show_analysis_results(file_path, analysis_results)
+            print(f"[DEBUG] Python Proje Analizi başarıyla tamamlandı!")
 
             # History'ye kaydet
             self.app.db.add_history(f"Python Dosya Analizi: {file_path}", "method_analysis")            
@@ -356,104 +364,6 @@ class PythonAnalyzer:
             
         except Exception as e:
             messagebox.showerror("Analiz Hatası", f"Dosya analizi sırasında bir hata oluştu:\n{e}", parent=self.app)    
-    def _perform_single_file_analysis(self, file_path):
-        """Tek dosyanın detaylı analizini yapar (eski _perform_analysis fonksiyonu)."""
-        results = {
-            'file_info': {},
-            'imports': {
-                'builtin': [],
-                'third_party': [],
-                'user_defined': []
-            },
-            'code_stats': {
-                'total_lines': 0,
-                'code_lines': 0,
-                'comment_lines': 0,
-                'blank_lines': 0,
-                'docstring_lines': 0
-            },
-            'functions': [],
-            'classes': [],
-            'errors': []
-        }
-
-        # Dosya bilgileri
-        file_stat = os.stat(file_path)
-        results['file_info'] = {
-            'name': os.path.basename(file_path),
-            'size': file_stat.st_size,
-            'modified': datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
-            'path': file_path
-        }
-
-        try:
-            # Dosyayı oku
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Satır bazlı analiz
-            lines = content.split('\n')
-            results['code_stats']['total_lines'] = len(lines)
-            
-            in_multiline_string = False
-            string_delimiter = None
-            
-            for line in lines:
-                stripped = line.strip()
-                
-                # Boş satırlar
-                if not stripped:
-                    results['code_stats']['blank_lines'] += 1
-                    continue
-                
-                # Çok satırlı string kontrolü
-                if '"""' in line or "'''" in line:
-                    if not in_multiline_string:
-                        in_multiline_string = True
-                        string_delimiter = '"""' if '"""' in line else "'''"
-                    elif string_delimiter in line:
-                        in_multiline_string = False
-                        string_delimiter = None
-                    results['code_stats']['docstring_lines'] += 1
-                elif in_multiline_string:
-                    results['code_stats']['docstring_lines'] += 1
-                # Yorum satırları
-                elif stripped.startswith('#'):
-                    results['code_stats']['comment_lines'] += 1
-                # Kod satırları
-                else:
-                    results['code_stats']['code_lines'] += 1
-
-            # AST ile analiz
-            try:
-                tree = ast.parse(content, filename=file_path)
-                self._analyze_ast(tree, results)
-            except SyntaxError as e:
-                results['errors'].append(f"Sözdizimi hatası: {e}")
-            except Exception as e:
-                results['errors'].append(f"AST analizi hatası: {e}")
-
-        except UnicodeDecodeError:
-            # UTF-8 ile okuyamadıysa farklı encoding'ler dene
-            encodings = ['latin1', 'cp1252', 'iso-8859-1']
-            content_read = False
-            
-            for encoding in encodings:
-                try:
-                    with open(file_path, 'r', encoding=encoding) as f:
-                        content = f.read()
-                    content_read = True
-                    break
-                except:
-                    continue
-            
-            if not content_read:
-                results['errors'].append("Dosya okunamadı: Desteklenmeyen karakter kodlaması")
-        except Exception as e:
-            results['errors'].append(f"Dosya okuma hatası: {e}")
-
-        return results
-
     def _analyze_ast(self, tree, results):
         """AST kullanarak kod yapısını analiz eder."""
         for node in ast.walk(tree):
@@ -588,171 +498,6 @@ class PythonAnalyzer:
         # Hatalar sekmesi (varsa)
         if results['errors']:
             self._create_project_errors_tab(notebook, results)
-
-    def _create_general_info_tab(self, notebook, results):
-        """Genel bilgiler sekmesini oluşturur."""
-        frame = ttk.Frame(notebook)
-        notebook.add(frame, text="Genel Bilgi")
-        
-        # Text widget ile bilgileri göster
-        text_widget = tk.Text(frame, wrap=tk.WORD, padx=10, pady=10)
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=text_widget.yview)
-        text_widget.configure(yscrollcommand=scrollbar.set)
-        
-        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Bilgileri ekle
-        info = results['file_info']
-        content = f"""DOSYA BİLGİLERİ
-{'='*50}
-
-Dosya Adı: {info['name']}
-Dosya Boyutu: {info['size']:,} byte ({info['size']/1024:.1f} KB)
-Son Değiştirme: {info['modified']}
-Tam Yol: {info['path']}
-
-KOD İSTATİSTİKLERİ
-{'='*50}
-
-Toplam Satır: {results['code_stats']['total_lines']:,}
-Kod Satırları: {results['code_stats']['code_lines']:,}
-Yorum Satırları: {results['code_stats']['comment_lines']:,}
-Docstring Satırları: {results['code_stats']['docstring_lines']:,}
-Boş Satırlar: {results['code_stats']['blank_lines']:,}
-
-YAPISAL BİLGİLER
-{'='*50}
-
-Toplam Fonksiyon: {len(results['functions'])}
-Toplam Sınıf: {len(results['classes'])}
-Toplam İmport: {len(results['imports']['builtin']) + len(results['imports']['third_party']) + len(results['imports']['user_defined'])}
-"""
-        
-        text_widget.insert(tk.END, content)
-        text_widget.config(state=tk.DISABLED)
-
-    def _create_imports_tab(self, notebook, results):
-        """İmport analizi sekmesini oluşturur."""
-        frame = ttk.Frame(notebook)
-        notebook.add(frame, text="İmportlar")
-        
-        # TreeView ile importları göster
-        tree = ttk.Treeview(frame, columns=('module',), show='tree headings')
-        tree.heading('#0', text='Kategori')
-        tree.heading('module', text='Modül Adı')
-        
-        # Scrollbar ekle
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Builtin/Standart Kütüphane
-        if results['imports']['builtin']:
-            builtin_node = tree.insert('', tk.END, text=f"Standart Kütüphane ({len(results['imports']['builtin'])})", open=True)
-            for module in sorted(results['imports']['builtin']):
-                tree.insert(builtin_node, tk.END, text='', values=(module,))
-        
-        # Third-party
-        if results['imports']['third_party']:
-            third_party_node = tree.insert('', tk.END, text=f"Üçüncü Taraf Kütüphaneler ({len(results['imports']['third_party'])})", open=True)
-            for module in sorted(results['imports']['third_party']):
-                tree.insert(third_party_node, tk.END, text='', values=(module,))
-        
-        # User-defined
-        if results['imports']['user_defined']:
-            user_node = tree.insert('', tk.END, text=f"Kullanıcı Tanımlı Modüller ({len(results['imports']['user_defined'])})", open=True)
-            for module in sorted(results['imports']['user_defined']):
-                tree.insert(user_node, tk.END, text='', values=(module,))
-
-    def _create_stats_tab(self, notebook, results):
-        """Kod istatistikleri sekmesini oluşturur."""
-        frame = ttk.Frame(notebook)
-        notebook.add(frame, text="İstatistikler")
-        
-        # Frame içinde istatistikleri göster
-        stats_frame = ttk.LabelFrame(frame, text="Satır İstatistikleri")
-        stats_frame.pack(fill=tk.X, padx=10, pady=5)
-        
-        stats = results['code_stats']
-        total = stats['total_lines']
-        
-        if total > 0:
-            # İstatistik satırları
-            ttk.Label(stats_frame, text=f"Toplam Satır: {total:,}").pack(anchor=tk.W, padx=10, pady=2)
-            ttk.Label(stats_frame, text=f"Kod Satırları: {stats['code_lines']:,} ({stats['code_lines']/total*100:.1f}%)").pack(anchor=tk.W, padx=10, pady=2)
-            ttk.Label(stats_frame, text=f"Yorum Satırları: {stats['comment_lines']:,} ({stats['comment_lines']/total*100:.1f}%)").pack(anchor=tk.W, padx=10, pady=2)
-            ttk.Label(stats_frame, text=f"Docstring Satırları: {stats['docstring_lines']:,} ({stats['docstring_lines']/total*100:.1f}%)").pack(anchor=tk.W, padx=10, pady=2)
-            ttk.Label(stats_frame, text=f"Boş Satırlar: {stats['blank_lines']:,} ({stats['blank_lines']/total*100:.1f}%)").pack(anchor=tk.W, padx=10, pady=2)
-        
-        # Özet bilgiler
-        summary_frame = ttk.LabelFrame(frame, text="Özet")
-        summary_frame.pack(fill=tk.X, padx=10, pady=5)
-        
-        ttk.Label(summary_frame, text=f"Toplam Fonksiyon: {len(results['functions'])}").pack(anchor=tk.W, padx=10, pady=2)
-        ttk.Label(summary_frame, text=f"Toplam Sınıf: {len(results['classes'])}").pack(anchor=tk.W, padx=10, pady=2)
-        
-        total_imports = len(results['imports']['builtin']) + len(results['imports']['third_party']) + len(results['imports']['user_defined'])
-        ttk.Label(summary_frame, text=f"Toplam İmport: {total_imports}").pack(anchor=tk.W, padx=10, pady=2)
-
-    def _create_structure_tab_DEPRECIATED(self, notebook, results):
-        """Fonksiyonlar ve sınıflar sekmesini oluşturur."""
-        frame = ttk.Frame(notebook)
-        notebook.add(frame, text="Yapı")
-        
-        # TreeView ile yapısal elementleri göster
-        tree = ttk.Treeview(frame, columns=('line', 'info'), show='tree headings')
-        tree.heading('#0', text='Ad')
-        tree.heading('line', text='Satır')
-        tree.heading('info', text='Detay')
-        
-        # Scrollbar ekle
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Sınıfları ekle
-        if results['classes']:
-            classes_node = tree.insert('', tk.END, text=f"Sınıflar ({len(results['classes'])})", open=True)
-            for cls in sorted(results['classes'], key=lambda x: x['line']):
-                cls_info = f"{len(cls['methods'])} method"
-                if cls['bases']:
-                    cls_info += f", inherit: {', '.join(cls['bases'])}"
-                cls_node = tree.insert(classes_node, tk.END, text=cls['name'], values=(cls['line'], cls_info))
-                
-                # Sınıfın methodlarını ekle
-                for method in sorted(cls['methods'], key=lambda x: x['line']):
-                    tree.insert(cls_node, tk.END, text=method['name'], values=(method['line'], f"{method['args']} parametre"))
-        
-        # Bağımsız fonksiyonları ekle
-        standalone_functions = [f for f in results['functions'] if not f['is_method']]
-        if standalone_functions:
-            funcs_node = tree.insert('', tk.END, text=f"Fonksiyonlar ({len(standalone_functions)})", open=True)
-            for func in sorted(standalone_functions, key=lambda x: x['line']):
-                tree.insert(funcs_node, tk.END, text=func['name'], values=(func['line'], f"{func['args']} parametre"))
-
-    def _create_errors_tab(self, notebook, results):
-        """Hatalar sekmesini oluşturur."""
-        frame = ttk.Frame(notebook)
-        notebook.add(frame, text="Hatalar")
-        
-        # Text widget ile hataları göster
-        text_widget = tk.Text(frame, wrap=tk.WORD, padx=10, pady=10)
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=text_widget.yview)
-        text_widget.configure(yscrollcommand=scrollbar.set)
-        
-        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Hataları ekle
-        for i, error in enumerate(results['errors'], 1):
-            text_widget.insert(tk.END, f"{i}. {error}\n\n")
-        
-        text_widget.config(state=tk.DISABLED)
 
     def _create_project_summary_tab(self, notebook, results):
         """Proje özeti sekmesini oluşturur."""

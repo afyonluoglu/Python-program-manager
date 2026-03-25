@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Program Yöneticisi - Yardım Kılavuzu</title>
+    <style>
+        /* =============================================== */
+        /* CSS RESET & BASE STYLES                         */
+        /* =============================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1a73e8;
+            --primary-dark: #1557b0;
+            --primary-light: #4285f4;
+            --secondary-color: #5f6368;
+            --success-color: #0f9d58;
+            --warning-color: #f9ab00;
+            --danger-color: #ea4335;
+            --info-color: #4285f4;
+            --background: #f8f9fa;
+            --surface: #ffffff;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --border-color: #dadce0;
+            --sidebar-width: 280px;
+            --header-height: 64px;
+            --shadow-sm: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+            --shadow-md: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+            --shadow-lg: 0 2px 6px 2px rgba(60,64,67,0.3), 0 8px 24px 6px rgba(60,64,67,0.15);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.2s ease;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--background);
+        }
+
+        /* =============================================== */
+        /* HEADER                                          */
+        /* =============================================== */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 1000;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .header-version {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: var(--background);
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .header-search {
+            flex: 1;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .search-box {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-box input {
+            width: 100%;
+            height: 44px;
+            padding: 0 44px;
+            border: 1px solid var(--border-color);
+            border-radius: 22px;
+            font-size: 14px;
+            background: var(--background);
+            transition: var(--transition);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: var(--surface);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+        }
+
+        /* =============================================== */
+        /* SIDEBAR                                         */
+        /* =============================================== */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height));
+            background: var(--surface);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 16px 0;
+            z-index: 900;
+        }
+
+        .sidebar-section {
+            margin-bottom: 8px;
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            margin-bottom: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: var(--transition);
+            font-size: 13px;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background: var(--background);
+            color: var(--primary-color);
+        }
+
+        .nav-link.active {
+            background: rgba(26, 115, 232, 0.08);
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .nav-link-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 10px;
+            background: var(--success-color);
+            color: white;
+        }
+
+        /* =============================================== */
+        /* MAIN CONTENT                                    */
+        /* =============================================== */
+        .main {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 32px 48px;
+            max-width: 1200px;
+        }
+
+        /* =============================================== */
+        /* SECTIONS                                        */
+        /* =============================================== */
+        .section {
+            margin-bottom: 48px;
+            scroll-margin-top: calc(var(--header-height) + 24px);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .section-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .section-title-group {
+            flex: 1;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .section-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* =============================================== */
+        /* CARDS                                           */
+        /* =============================================== */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title-icon {
+            color: var(--primary-color);
+        }
+
+        .card-content {
+            color: var(--text-secondary);
+        }
+
+        .card-content ul {
+            list-style: none;
+        }
+
+        .card-content li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .card-content li:last-child {
+            border-bottom: none;
+        }
+
+        .card-content li::before {
+            content: '•';
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        /* =============================================== */
+        /* FEATURE CARD - ÖZEL ÖZELLİK KARTI               */
+        /* =============================================== */
+        .feature-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .feature-card.new {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #bbf7d0;
+        }
+
+        .feature-card.warning {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-color: #fde68a;
+        }
+
+        .feature-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .feature-card-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--success-color);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .feature-card-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* =============================================== */
+        /* BADGES                                          */
+        /* =============================================== */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-new { background: var(--success-color); color: white; }
+        .badge-python { background: #3776ab; color: white; }
+        .badge-json { background: #f39c12; color: white; }
+        .badge-md { background: #4285f4; color: white; }
+        .badge-zip { background: #e74c3c; color: white; }
+        .badge-exe { background: #27ae60; color: white; }
+        .badge-mp3 { background: #9b59b6; color: white; }
+        .badge-readonly { background: #95a5a6; color: white; }
+        .badge-folder { background: #d4a574; color: white; }
+
+        /* =============================================== */
+        /* KEYBOARD SHORTCUTS                              */
+        /* =============================================== */
+        .kbd {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 24px;
+            padding: 2px 8px;
+            background: linear-gradient(180deg, #f5f5f5 0%, #e9e9e9 100%);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: #333;
+            box-shadow: 0 2px 0 #b0b0b0;
+            margin: 0 2px;
+        }
+
+        .shortcut-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .shortcut-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+        }
+
+        .shortcut-item:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .shortcut-keys {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .shortcut-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* =============================================== */
+        /* FILE TYPE COLORS                                */
+        /* =============================================== */
+        .file-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .file-type-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+        }
+
+        .file-type-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .file-type-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .file-type-icon.python { background: #3776ab; color: white; }
+        .file-type-icon.json { background: #f39c12; color: white; }
+        .file-type-icon.md { background: #4285f4; color: white; }
+        .file-type-icon.zip { background: #e74c3c; color: white; }
+        .file-type-icon.exe { background: #27ae60; color: white; }
+        .file-type-icon.mp3 { background: #9b59b6; color: white; }
+        .file-type-icon.folder { background: #d4a574; color: white; }
+
+        .file-type-info {
+            flex: 1;
+        }
+
+        .file-type-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .file-type-ext {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* =============================================== */
+        /* ACCORDION                                       */
+        /* =============================================== */
+        .accordion {
+            margin-bottom: 8px;
+        }
+
+        .accordion-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+        }
+
+        .accordion-trigger:hover {
+            background: var(--background);
+        }
+
+        .accordion-trigger.active {
+            background: var(--background);
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .accordion-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .accordion-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-trigger.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            display: none;
+            padding: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+        }
+
+        .accordion-content.active {
+            display: block;
+        }
+
+        /* =============================================== */
+        /* TABLE                                           */
+        /* =============================================== */
+        .table-container {
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--background);
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover td {
+            background: var(--background);
+        }
+
+        /* =============================================== */
+        /* CODE BLOCKS                                     */
+        /* =============================================== */
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            color: var(--danger-color);
+        }
+
+        pre {
+            background: #263238;
+            color: #e0e0e0;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* =============================================== */
+        /* ALERT BOXES                                     */
+        /* =============================================== */
+        .alert {
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            margin: 16px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .alert-info {
+            background: #e8f4fd;
+            border-left: 4px solid var(--info-color);
+        }
+
+        .alert-success {
+            background: #e6f4ea;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .alert-warning {
+            background: #fef7e0;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-danger {
+            background: #fce8e6;
+            border-left: 4px solid var(--danger-color);
+        }
+
+        /* =============================================== */
+        /* FOOTER                                          */
+        /* =============================================== */
+        .footer {
+            margin-top: 48px;
+            padding: 32px 0;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 16px;
+        }
+
+        .footer-links a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* =============================================== */
+        /* RESPONSIVE                                      */
+        /* =============================================== */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 24px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-search {
+                display: none;
+            }
+
+            .shortcut-grid,
+            .file-type-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* =============================================== */
+        /* PRINT STYLES                                    */
+        /* =============================================== */
+        @media print {
+            .header, .sidebar {
+                display: none;
+            }
+
+            .main {
+                margin: 0;
+                padding: 20px;
+            }
+
+            .section {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+    <div class="header-logo">
+        <div class="header-logo-icon">🐍</div>
+        <h1 class="header-title">Python Program Yöneticisi</h1>
+        <span class="header-version">v1.4</span>
+    </div>
+    <div class="header-search">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Yardım konularında ara..." onkeyup="searchHelp()">
+        </div>
+    </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Başlarken</div>
+        <a href="#giris" class="nav-link active">
+            <span class="nav-link-icon">🏠</span>
+            Giriş
+        </a>
+        <a href="#folder-selection" class="nav-link">
+            <span class="nav-link-icon">📁</span>
+            Klasör Seçme
+        </a>
+        <a href="#navigation" class="nav-link">
+            <span class="nav-link-icon">🧭</span>
+            Gezinti
+        </a>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Dosya İşlemleri</div>
+        <a href="#file-types" class="nav-link">
+            <span class="nav-link-icon">📄</span>
+            Dosya Türleri
+        </a>
+        <a href="#file-operations" class="nav-link">
+            <span class="nav-link-icon">⚙️</span>
+            Dosya İşlemleri
+        </a>
+        <a href="#zip-management" class="nav-link">
+            <span class="nav-link-icon">📦</span>
+            ZIP Yönetimi
+        </a>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Araçlar</div>
+        <a href="#python-editor" class="nav-link">
+            <span class="nav-link-icon">✏️</span>
+            Python Editor
+        </a>
+        <a href="#python-analysis" class="nav-link">
+            <span class="nav-link-icon">🔬</span>
+            Python Analizi
+        </a>
+        <a href="#search" class="nav-link">
+            <span class="nav-link-icon">🔍</span>
+            Arama
+        </a>
+        <a href="#favorites" class="nav-link">
+            <span class="nav-link-icon">⭐</span>
+            Favoriler
+        </a>
+        <a href="#history" class="nav-link">
+            <span class="nav-link-icon">📜</span>
+            Geçmiş
+        </a>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Ayarlar</div>
+        <a href="#themes" class="nav-link">
+            <span class="nav-link-icon">🎨</span>
+            Temalar
+        </a>
+        <a href="#settings" class="nav-link">
+            <span class="nav-link-icon">🔧</span>
+            Pencere Ayarları
+        </a>
+        <a href="#exclusion-settings" class="nav-link">
+            <span class="nav-link-icon">🚫</span>
+            Hariç Tutma Ayarları
+            <span class="nav-badge">YENİ</span>
+        </a>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Referans</div>
+        <a href="#shortcuts" class="nav-link">
+            <span class="nav-link-icon">⌨️</span>
+            Klavye Kısayolları
+        </a>
+        <a href="#tips" class="nav-link">
+            <span class="nav-link-icon">💡</span>
+            İpuçları
+        </a>
+    </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+    <!-- GİRİŞ BÖLÜMÜ -->
+    <section id="giris" class="section">
+        <div class="section-header">
+            <div class="section-icon">🏠</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Python Program Yöneticisi'ne Hoş Geldiniz</h2>
+                <p class="section-subtitle">Python projelerinizi organize edin, çalıştırın ve yönetin</p>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <span class="alert-icon">ℹ️</span>
+            <div>
+                <strong>Hızlı Başlangıç:</strong> Program açıldığında son kullanılan klasör otomatik olarak yüklenir. 
+                Yeni bir klasör seçmek için <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">O</kbd> tuşlarını kullanın veya 
+                <strong>Dosya → Klasör Seç...</strong> menüsünü tıklayın.
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">✨</span> Temel Özellikler</h3>
+            <div class="card-content">
+                <ul>
+                    <li>Python dosyalarını (.py) kolayca çalıştırma ve düzenleme</li>
+                    <li>ZIP arşivlerini görüntüleme, çıkartma ve sıkıştırma</li>
+                    <li>JSON ve Markdown dosyaları için özel görüntüleyiciler</li>
+                    <li>Gelişmiş Python kod analizi (sınıflar, fonksiyonlar, bağımlılıklar)</li>
+                    <li>Tema desteği ve özelleştirilebilir arayüz</li>
+                    <li>Favoriler listesi ve çalıştırma geçmişi</li>
+                    <li>Hariç tutma listesi ile gereksiz dosyaları filtreleme</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- KLASÖR SEÇME -->
+    <section id="folder-selection" class="section">
+        <div class="section-header">
+            <div class="section-icon">📁</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Klasör Seçme</h2>
+                <p class="section-subtitle">Çalışma klasörünüzü belirleme ve yönetme</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">📂</span> Klasör Seçimi</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Otomatik Yükleme:</strong> Program açıldığında son kullanılan klasör otomatik olarak yüklenir</li>
+                    <li><strong>Manuel Seçim:</strong> <strong>Dosya → Klasör Seç...</strong> menüsünü veya <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">O</kbd> kısayolunu kullanın</li>
+                    <li><strong>Klasör Ağacı:</strong> Seçilen klasör ve tüm alt klasörler sol panelde ağaç yapısı olarak gösterilir</li>
+                    <li><strong>Hızlı Erişim:</strong> Sık kullandığınız klasörleri favorilere ekleyebilirsiniz</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="shortcut-grid">
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">O</kbd>
+                </div>
+                <span class="shortcut-desc">Klasör seçme dialogunu açar</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- GEZİNTİ -->
+    <section id="navigation" class="section">
+        <div class="section-header">
+            <div class="section-icon">🧭</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Gezinti</h2>
+                <p class="section-subtitle">Dosya ve klasörler arasında etkili gezinme</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🗂️</span> Sol Panel - Klasör Ağacı</h3>
+            <div class="card-content">
+                <ul>
+                    <li>Klasörleri genişletmek için yanındaki <strong>▶</strong> okuna tıklayın</li>
+                    <li>Bir klasöre tıklamak, o klasörün içeriğini sağ panelde gösterir</li>
+                    <li>Sağ tık ile klasör özellikleri görüntülenebilir</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">📋</span> Sağ Panel - Dosya Listesi</h3>
+            <div class="card-content">
+                <ul>
+                    <li>Seçili klasördeki desteklenen dosya türleri listelenir</li>
+                    <li><strong>Çift tıklama</strong> ile dosya çalıştırılır veya görüntülenir</li>
+                    <li><strong>Sağ tıklama</strong> ile context menüsü açılır</li>
+                    <li><strong>..</strong> satırına çift tıklayarak üst klasöre dönülür</li>
+                    <li>Sıralama için sütun başlıklarına tıklayın</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="shortcut-grid">
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Backspace</kbd>
+                </div>
+                <span class="shortcut-desc">Üst klasöre çıkar</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Enter</kbd>
+                </div>
+                <span class="shortcut-desc">Seçili dosyayı açar/çalıştırır</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">F5</kbd>
+                </div>
+                <span class="shortcut-desc">Dosya listesini yeniler</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- DOSYA TÜRLERİ -->
+    <section id="file-types" class="section">
+        <div class="section-header">
+            <div class="section-icon">📄</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Desteklenen Dosya Türleri</h2>
+                <p class="section-subtitle">Program tarafından desteklenen dosya formatları ve renk kodları</p>
+            </div>
+        </div>
+
+        <div class="file-type-grid">
+            <div class="file-type-item">
+                <div class="file-type-icon python">🐍</div>
+                <div class="file-type-info">
+                    <div class="file-type-name">Python Dosyası</div>
+                    <div class="file-type-ext">.py</div>
+                </div>
+                <span class="badge badge-python">PY</span>
+            </div>
+            <div class="file-type-item">
+                <div class="file-type-icon json">📄</div>
+                <div class="file-type-info">
+                    <div class="file-type-name">JSON Dosyası</div>
+                    <div class="file-type-ext">.json</div>
+                </div>
+                <span class="badge badge-json">JSON</span>
+            </div>
+            <div class="file-type-item">
+                <div class="file-type-icon md">📖</div>
+                <div class="file-type-info">
+                    <div class="file-type-name">Markdown Dosyası</div>
+                    <div class="file-type-ext">.md, .markdown</div>
+                </div>
+                <span class="badge badge-md">MD</span>
+            </div>
+            <div class="file-type-item">
+                <div class="file-type-icon zip">📦</div>
+                <div class="file-type-info">
+                    <div class="file-type-name">ZIP Arşivi</div>
+                    <div class="file-type-ext">.zip</div>
+                </div>
+                <span class="badge badge-zip">ZIP</span>
+            </div>
+            <div class="file-type-item">
+                <div class="file-type-icon exe">⚙️</div>
+                <div class="file-type-info">
+                    <div class="file-type-name">Çalıştırılabilir</div>
+                    <div class="file-type-ext">.exe</div>
+                </div>
+                <span class="badge badge-exe">EXE</span>
+            </div>
+            <div class="file-type-item">
+                <div class="file-type-icon mp3">🎵</div>
+                <div class="file-type-info">
+                    <div class="file-type-name">Ses Dosyası</div>
+                    <div class="file-type-ext">.mp3</div>
+                </div>
+                <span class="badge badge-mp3">MP3</span>
+            </div>
+            <div class="file-type-item">
+                <div class="file-type-icon folder">📁</div>
+                <div class="file-type-info">
+                    <div class="file-type-name">Klasör</div>
+                    <div class="file-type-ext">Dizin</div>
+                </div>
+                <span class="badge badge-folder">KLASÖR</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🎨</span> Renk Kodlaması</h3>
+            <div class="card-content">
+                <p>Dosya listesinde her dosya türü farklı renkte görüntülenir:</p>
+                <ul>
+                    <li><strong style="color: #CF0101;">Python dosyaları</strong> - Kırmızı metin</li>
+                    <li><strong style="color: #FF6600;">JSON dosyaları</strong> - Turuncu metin, açık turuncu arka plan</li>
+                    <li><strong style="color: #0366D6;">Markdown dosyaları</strong> - Mavi metin, GitHub tarzı arka plan</li>
+                    <li><strong style="color: #008414;">EXE dosyaları</strong> - Yeşil metin</li>
+                    <li><strong style="color: #956B00;">Klasörler</strong> - Altın sarısı metin, ten rengi arka plan</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- DOSYA İŞLEMLERİ -->
+    <section id="file-operations" class="section">
+        <div class="section-header">
+            <div class="section-icon">⚙️</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Dosya İşlemleri</h2>
+                <p class="section-subtitle">Dosyalarla yapılabilecek işlemler ve context menüsü</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">👆</span> Çift Tıklama İşlemleri</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>.py dosyaları:</strong> Python yorumlayıcısı ile çalıştırılır</li>
+                    <li><strong>.exe dosyaları:</strong> Onay alındıktan sonra çalıştırılır</li>
+                    <li><strong>.zip dosyaları:</strong> ZIP içerik görüntüleyicisi açılır</li>
+                    <li><strong>.json dosyaları:</strong> JSON görüntüleyicisi açılır</li>
+                    <li><strong>.md dosyaları:</strong> Markdown görüntüleyicisi açılır</li>
+                    <li><strong>.mp3 dosyaları:</strong> Dahili ses oynatıcısı ile çalınır</li>
+                    <li><strong>Klasörler:</strong> Klasörün içine girilir</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🖱️</span> Sağ Tık Menüsü (Context Menu)</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Çalıştır:</strong> Dosyayı çalıştırır</li>
+                    <li><strong>Düzenle:</strong> Python dosyasını editörde açar</li>
+                    <li><strong>Açıklama Düzenle:</strong> Dosyaya açıklama ekler (sadece .py)</li>
+                    <li><strong>Python Proje Analizi:</strong> Detaylı kod analizi yapar</li>
+                    <li><strong>Favorilere Ekle/Kaldır:</strong> Favori listesine ekler veya çıkarır</li>
+                    <li><strong>EXE'ye Çevir:</strong> Python dosyasını çalıştırılabilir yapar</li>
+                    <li><strong>ZIP'e Sıkıştır:</strong> Dosya veya klasörü sıkıştırır</li>
+                    <li><strong>Dosyaya Git:</strong> Sistem dosya gezgininde gösterir</li>
+                    <li><strong>Yeniden Adlandır:</strong> Dosya adını değiştirir (<kbd class="kbd">F2</kbd>)</li>
+                    <li><strong>Sil:</strong> Dosyayı siler (<kbd class="kbd">Delete</kbd>)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="alert alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <div>
+                <strong>Dikkat:</strong> Silme işlemi geri alınamaz! Dosya kalıcı olarak silinir, 
+                Geri Dönüşüm Kutusu'na gönderilmez.
+            </div>
+        </div>
+    </section>
+
+    <!-- ZIP YÖNETİMİ -->
+    <section id="zip-management" class="section">
+        <div class="section-header">
+            <div class="section-icon">📦</div>
+            <div class="section-title-group">
+                <h2 class="section-title">ZIP Dosya Yönetimi</h2>
+                <p class="section-subtitle">Arşiv dosyalarını görüntüleme, oluşturma ve çıkartma</p>
+            </div>
+        </div>
+
+        <div class="feature-card new">
+            <div class="feature-card-header">
+                <div class="feature-card-icon">📦</div>
+                <span class="feature-card-title">ZIP İçerik Görüntüleyici</span>
+                <span class="badge badge-new">GELİŞTİRİLDİ</span>
+            </div>
+            <p>ZIP dosyalarına çift tıklayarak içeriği ağaç yapısında görüntüleyin. İçerideki dosyalara erişmek için sağ tık menüsünü kullanın.</p>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">👁️</span> ZIP İçeriği Görüntüleme</h3>
+            <div class="card-content">
+                <ul>
+                    <li>ZIP dosyasına <strong>çift tıklayarak</strong> içerik görüntüleyiciyi açın</li>
+                    <li>İçerik ağaç yapısında, klasörler ve dosyalar ayrı ayrı gösterilir</li>
+                    <li>Her dosyanın boyutu ve sıkıştırılmış boyutu görüntülenir</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🖱️</span> ZIP İçi Dosya İşlemleri</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Çalıştır:</strong> Dosyayı geçici olarak çıkartıp çalıştırır</li>
+                    <li><strong>Çıkart...:</strong> Dosyayı istediğiniz konuma çıkartır</li>
+                    <li><strong>Python Dosyasını Aç:</strong> <span class="badge badge-readonly">READONLY</span> Python dosyalarını editörde güvenli modda görüntüler</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">📁</span> Klasör/Dosya Sıkıştırma</h3>
+            <div class="card-content">
+                <ul>
+                    <li>Dosya veya klasöre <strong>sağ tıklayıp</strong> "ZIP'e Sıkıştır" seçeneğini kullanın</li>
+                    <li>ZIP dosyası aynı dizinde, aynı isimle oluşturulur</li>
+                    <li><strong>Hariç tutulan dosyalar</strong> otomatik olarak ZIP'e eklenmez</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <span class="alert-icon">💡</span>
+            <div>
+                <strong>İpucu:</strong> ZIP sıkıştırma işleminde <code>__pycache__</code>, <code>.git</code> gibi 
+                gereksiz klasörler otomatik olarak hariç tutulur. Bu ayarı <strong>Ayarlar → Genel Ayarlar</strong> 
+                menüsünden özelleştirebilirsiniz.
+            </div>
+        </div>
+    </section>
+
+    <!-- PYTHON EDITOR -->
+    <section id="python-editor" class="section">
+        <div class="section-header">
+            <div class="section-icon">✏️</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Python Editor</h2>
+                <p class="section-subtitle">Entegre kod editörü ile Python dosyalarını düzenleme</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🖥️</span> Editör Özellikleri</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Syntax Highlighting:</strong> Python kodu renkli olarak gösterilir</li>
+                    <li><strong>Satır Numaraları:</strong> Her satırın numarası görüntülenir</li>
+                    <li><strong>Kaydet:</strong> Değişiklikleri kaydedin (<kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">S</kbd>)</li>
+                    <li><strong>Çalıştır:</strong> Dosyayı doğrudan editörden çalıştırın</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-card-header">
+                <div class="feature-card-icon" style="background: #95a5a6;">🔒</div>
+                <span class="feature-card-title">Readonly (Salt Okunur) Mod</span>
+                <span class="badge badge-readonly">READONLY</span>
+            </div>
+            <p>ZIP içindeki Python dosyalarını güvenli şekilde görüntüleyin. Bu modda:</p>
+            <ul style="margin-top: 12px; padding-left: 20px;">
+                <li>Dosya içeriği değiştirilemez</li>
+                <li>Kaydet butonu gizlenir</li>
+                <li>Syntax highlighting aktif kalır</li>
+                <li>İşlem geçmişe kaydedilir</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- PYTHON ANALİZİ -->
+    <section id="python-analysis" class="section">
+        <div class="section-header">
+            <div class="section-icon">🔬</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Python Proje Analizi</h2>
+                <p class="section-subtitle">Kod yapısı, bağımlılıklar ve istatistikleri analiz etme</p>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <span class="alert-icon">ℹ️</span>
+            <div>
+                Python Proje Analizi özelliğine erişmek için bir <strong>.py</strong> dosyasına sağ tıklayın 
+                ve <strong>"Python Proje Analizi"</strong> seçeneğini seçin.
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">📊</span> Analiz Özellikleri</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Proje Keşfi:</strong> Ana dosyadan başlayarak tüm bağımlı dosyaları otomatik bulur</li>
+                    <li><strong>Kod İstatistikleri:</strong> Toplam satır, kod satırı, yorum satırı, boş satır sayıları</li>
+                    <li><strong>Yapısal Analiz:</strong> Sınıflar, metotlar ve fonksiyonların listesi</li>
+                    <li><strong>Import Analizi:</strong> Standart kütüphane, üçüncü taraf ve kullanıcı tanımlı importlar</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">📑</span> Analiz Sekmeleri</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Proje Özeti:</strong> Genel bilgiler ve özet istatistikler</li>
+                    <li><strong>Dosyalar:</strong> Projedeki tüm dosyaların listesi ve detayları</li>
+                    <li><strong>İmportlar:</strong> Kategorize edilmiş import listesi</li>
+                    <li><strong>İstatistikler:</strong> Detaylı kod metrikleri</li>
+                    <li><strong>Yapısal Analiz:</strong> Sınıf ve fonksiyon hiyerarşisi</li>
+                    <li><strong>Hatalar:</strong> Analiz sırasında bulunan sorunlar (varsa)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ARAMA -->
+    <section id="search" class="section">
+        <div class="section-header">
+            <div class="section-icon">🔍</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Arama Özellikleri</h2>
+                <p class="section-subtitle">Dosya adı ve içerik araması</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">📁</span> Dosya Adı Araması</h3>
+            <div class="card-content">
+                <ul>
+                    <li><kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">D</kbd> tuşları ile açılır</li>
+                    <li>Joker karakter desteği: <code>*</code> ve <code>?</code></li>
+                    <li>Büyük/küçük harf duyarsız arama</li>
+                    <li>Alt klasörlerde rekürsif arama</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">📝</span> Kelime Araması (İçerik Arama)</h3>
+            <div class="card-content">
+                <ul>
+                    <li><kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">F</kbd> tuşları ile açılır</li>
+                    <li>Python dosyalarının içinde metin araması</li>
+                    <li>Bulunan sonuçlar satır numarası ile gösterilir</li>
+                    <li>Sonuca çift tıklayarak dosyayı açabilirsiniz</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card new">
+            <div class="feature-card-header">
+                <div class="feature-card-icon">🎨</div>
+                <span class="feature-card-title">Arama Sonuçlarında Renklendirme</span>
+                <span class="badge badge-new">YENİ</span>
+            </div>
+            <p>Hariç tutma listesine uyan dosyalar arama sonuçlarında <span style="background-color: #FFCCCC; padding: 2px 6px; border-radius: 4px;">açık kırmızı arka plan</span> ile gösterilir. 
+            Bu sayede hangi dosyaların normalde işlenmediğini kolayca görebilirsiniz.</p>
+        </div>
+
+        <div class="shortcut-grid">
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">D</kbd>
+                </div>
+                <span class="shortcut-desc">Dosya adı araması</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">F</kbd>
+                </div>
+                <span class="shortcut-desc">Kelime (içerik) araması</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAVORİLER -->
+    <section id="favorites" class="section">
+        <div class="section-header">
+            <div class="section-icon">⭐</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Favoriler Paneli</h2>
+                <p class="section-subtitle">Sık kullandığınız dosyalara hızlı erişim</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">⭐</span> Favoriler Kullanımı</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Panel Açma/Kapatma:</strong> <strong>Görünüm → Favoriler Paneli</strong> veya <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">B</kbd></li>
+                    <li><strong>Favori Ekleme:</strong> Dosyaya sağ tık → <strong>Favorilere Ekle</strong></li>
+                    <li><strong>Favori Çalıştırma:</strong> Panelde çift tıklama</li>
+                    <li><strong>Favori Kaldırma:</strong> Panelde sağ tık → <strong>Kaldır</strong></li>
+                    <li>Panel konumu ve görünürlüğü otomatik kaydedilir</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="shortcut-grid">
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">B</kbd>
+                </div>
+                <span class="shortcut-desc">Favoriler panelini göster/gizle</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- GEÇMİŞ -->
+    <section id="history" class="section">
+        <div class="section-header">
+            <div class="section-icon">📜</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Geçmiş İşlemler</h2>
+                <p class="section-subtitle">Yapılan işlemlerin kaydı ve istatistikleri</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">📋</span> Kaydedilen İşlemler</h3>
+            <div class="card-content">
+                <ul>
+                    <li>Python dosyası çalıştırma</li>
+                    <li>ZIP sıkıştırma ve çıkartma</li>
+                    <li>Dosya arama işlemleri</li>
+                    <li>Yeniden adlandırma</li>
+                    <li>MP3 oynatma</li>
+                    <li>Python Editor kullanımı (Readonly dahil)</li>
+                    <li>ZIP içerik görüntüleme</li>
+                    <li>Python Proje Analizi</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🎛️</span> Filtreleme Seçenekleri</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>İşlem Türü:</strong> Renk kodlu checkbox'larla işlem türüne göre filtreleme</li>
+                    <li><strong>Tarih Aralığı:</strong> Bugün, Dün, Son Hafta, Son Ay, Hepsi</li>
+                    <li><strong>İstatistikler:</strong> İşlem sayıları ve en çok çalıştırılan programlar</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="shortcut-grid">
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">H</kbd>
+                </div>
+                <span class="shortcut-desc">Geçmiş penceresini açar</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- TEMALAR -->
+    <section id="themes" class="section">
+        <div class="section-header">
+            <div class="section-icon">🎨</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Tema Yönetimi</h2>
+                <p class="section-subtitle">Arayüz renklerini özelleştirme</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🎨</span> Tema Özellikleri</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Tema Yönetimi:</strong> <strong>Ayarlar → Tema Yönetimi</strong> veya <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">T</kbd></li>
+                    <li>Özel renk paletleri oluşturun veya düzenleyin</li>
+                    <li>Kaydedilen tema program açılışında otomatik uygulanır</li>
+                    <li><strong>Varsayılana Dön:</strong> Orijinal temaya geri dönün</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="shortcut-grid">
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">T</kbd>
+                </div>
+                <span class="shortcut-desc">Tema yönetimi penceresini açar</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- PENCERE AYARLARI -->
+    <section id="settings" class="section">
+        <div class="section-header">
+            <div class="section-icon">🔧</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Pencere Ayarları</h2>
+                <p class="section-subtitle">Pencere boyutları ve konumları</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🖼️</span> Otomatik Kayıt</h3>
+            <div class="card-content">
+                <ul>
+                    <li>Tüm pencerelerin boyut ve konumu otomatik kaydedilir</li>
+                    <li>Ana pencere, geçmiş, tema, arama, ZIP içeriği, editor pencereleri</li>
+                    <li>Sütun genişlikleri klasör bazında hatırlanır</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🔄</span> Sıfırlama</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Ayarlar → Pencere Ayarları</strong> menüsünden erişin</li>
+                    <li>Her pencereyi ayrı ayrı varsayılan konuma sıfırlayabilirsiniz</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="shortcut-grid">
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">P</kbd>
+                </div>
+                <span class="shortcut-desc">Pencere ayarları penceresini açar</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- HARİÇ TUTMA AYARLARI -->
+    <section id="exclusion-settings" class="section">
+        <div class="section-header">
+            <div class="section-icon">🚫</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Hariç Tutma Ayarları (Exclusion List)</h2>
+                <p class="section-subtitle">Belirli dosya ve klasörleri işlemlerden hariç tutma</p>
+            </div>
+            <span class="badge badge-new">YENİ</span>
+        </div>
+
+        <div class="alert alert-success">
+            <span class="alert-icon">✨</span>
+            <div>
+                <strong>Yeni Özellik!</strong> Hariç tutma listesi ile gereksiz dosyaları filtreleyerek daha temiz ve hızlı çalışma deneyimi yaşayın.
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🔧</span> Ayarlara Erişim</h3>
+            <div class="card-content">
+                <p><strong>Ayarlar → Genel Ayarlar...</strong> menüsünden hariç tutma listesine erişebilirsiniz.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">📝</span> Pattern Tanımlama</h3>
+            <div class="card-content">
+                <p>Virgülle ayrılarak birden fazla pattern tanımlayabilirsiniz:</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pattern</th>
+                                <th>Açıklama</th>
+                                <th>Örnek Eşleşmeler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>__pycache__</code></td>
+                                <td>Python cache klasörleri</td>
+                                <td>src/__pycache__/, lib/__pycache__/</td>
+                            </tr>
+                            <tr>
+                                <td><code>*.pyc</code></td>
+                                <td>Derlenmiş Python dosyaları</td>
+                                <td>module.pyc, utils.pyc</td>
+                            </tr>
+                            <tr>
+                                <td><code>.git</code></td>
+                                <td>Git versiyon kontrol klasörü</td>
+                                <td>proje/.git/</td>
+                            </tr>
+                            <tr>
+                                <td><code>build</code></td>
+                                <td>Derleme çıktı klasörü</td>
+                                <td>proje/build/</td>
+                            </tr>
+                            <tr>
+                                <td><code>dist</code></td>
+                                <td>Dağıtım klasörü</td>
+                                <td>proje/dist/</td>
+                            </tr>
+                            <tr>
+                                <td><code>dist\*.*</code></td>
+                                <td>dist klasöründeki tüm dosyalar</td>
+                                <td>dist/app.exe, dist/readme.txt</td>
+                            </tr>
+                            <tr>
+                                <td><code>node_modules</code></td>
+                                <td>Node.js bağımlılık klasörü</td>
+                                <td>proje/node_modules/</td>
+                            </tr>
+                            <tr>
+                                <td><code>*env\*.*</code></td>
+                                <td>Sanal ortam klasörleri</td>
+                                <td>venv/, .env/, myenv/</td>
+                            </tr>
+                            <tr>
+                                <td><code>*.egg-info</code></td>
+                                <td>Python paket bilgi klasörleri</td>
+                                <td>mypackage.egg-info/</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">⚡</span> Etkilenen İşlemler</h3>
+            <div class="card-content">
+                <div class="accordion">
+                    <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                        <span class="accordion-title">📦 ZIP Sıkıştırma</span>
+                        <span class="accordion-icon">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <p>Bir klasörü ZIP dosyasına sıkıştırırken, hariç tutma listesine uyan dosya ve klasörler <strong>otomatik olarak atlanır</strong>.</p>
+                        <ul>
+                            <li>Önce klasör taranır ve hariç tutulan öğeler belirlenir</li>
+                            <li>Hariç tutulan klasörlerdeki toplam dosya sayısı hesaplanır</li>
+                            <li>Kullanıcıya kaç dosyanın hariç tutulacağı bildirilir</li>
+                            <li>Onay alındıktan sonra sıkıştırma işlemi başlar</li>
+                        </ul>
+                        <div class="alert alert-info" style="margin-top: 12px;">
+                            <span class="alert-icon">💡</span>
+                            <div>Örneğin, bir Python projesini sıkıştırırken <code>__pycache__</code> klasörleri ve <code>*.pyc</code> dosyaları otomatik olarak ZIP'e eklenmez.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion">
+                    <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                        <span class="accordion-title">📊 Klasör Özellikleri</span>
+                        <span class="accordion-icon">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <p>Klasör özelliklerini görüntülerken (sağ tık → Klasör Özellikleri), hariç tutulan dosyalar hesaplamalara <strong>dahil edilmez</strong>:</p>
+                        <ul>
+                            <li><strong>Dosya Sayısı:</strong> Yalnızca dahil edilen dosyalar sayılır</li>
+                            <li><strong>Toplam Boyut:</strong> Hariç tutulan dosyaların boyutu eklenmez</li>
+                            <li><strong>Kod Satır Sayısı:</strong> Hariç tutulan .py dosyaları sayılmaz</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="accordion">
+                    <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                        <span class="accordion-title">🔍 Arama Sonuçları</span>
+                        <span class="accordion-icon">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <p>Dosya araması ve kelime araması sonuçlarında, hariç tutma listesine uyan dosyalar <strong>görsel olarak işaretlenir</strong>:</p>
+                        <ul>
+                            <li>Eşleşen dosyalar <span style="background-color: #FFCCCC; padding: 2px 6px; border-radius: 4px;">açık kırmızı arka plan</span> ile gösterilir</li>
+                            <li>Bu dosyalar hâlâ sonuçlarda görünür, ancak normalde işlenmediği görsel olarak belirtilir</li>
+                            <li>Çift tıklayarak bu dosyalara da erişilebilir</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🔬</span> Teknik Detaylar</h3>
+            <div class="card-content">
+                <p>Hariç tutma sistemi <code>ExclusionManager</code> sınıfı tarafından yönetilir ve şu özellikleri sunar:</p>
+                <ul>
+                    <li><strong>Pattern Ayrıştırma:</strong> Klasör ve dosya pattern'leri otomatik olarak ayrıştırılır</li>
+                    <li><strong>Fnmatch Desteği:</strong> <code>*</code> ve <code>?</code> joker karakterleri desteklenir</li>
+                    <li><strong>Büyük/Küçük Harf:</strong> Karşılaştırmalar büyük/küçük harf duyarsızdır</li>
+                    <li><strong>Yol Normalizasyonu:</strong> Windows ve Unix yol ayırıcıları otomatik dönüştürülür</li>
+                </ul>
+                <pre>
+# Örnek Kullanım
+manager = ExclusionManager("__pycache__, *.pyc, dist\\*.*")
+
+# Klasör kontrolü
+manager.should_exclude_dir("__pycache__")  # True
+manager.should_exclude_dir("src")          # False
+
+# Dosya kontrolü
+manager.is_file_excluded("test.pyc", full_path, root)  # True
+                </pre>
+            </div>
+        </div>
+
+        <div class="alert alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <div>
+                <strong>Not:</strong> Hariç tutma ayarları değiştirildiğinde, değişiklikler hemen aktif olur. 
+                Programı yeniden başlatmanıza gerek yoktur.
+            </div>
+        </div>
+    </section>
+
+    <!-- KLAVYE KISAYOLLARI -->
+    <section id="shortcuts" class="section">
+        <div class="section-header">
+            <div class="section-icon">⌨️</div>
+            <div class="section-title-group">
+                <h2 class="section-title">Klavye Kısayolları</h2>
+                <p class="section-subtitle">Hızlı erişim için klavye kısayolları</p>
+            </div>
+        </div>
+
+        <div class="shortcut-grid">
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">F1</kbd>
+                </div>
+                <span class="shortcut-desc">Bu yardım ekranını açar</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">F2</kbd>
+                </div>
+                <span class="shortcut-desc">Dosya/klasör adını değiştirir</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">F5</kbd>
+                </div>
+                <span class="shortcut-desc">Dosya listesini yeniler</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">O</kbd>
+                </div>
+                <span class="shortcut-desc">Klasör seçme dialogunu açar</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">D</kbd>
+                </div>
+                <span class="shortcut-desc">Dosya adı araması</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">F</kbd>
+                </div>
+                <span class="shortcut-desc">Kelime (içerik) araması</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">B</kbd>
+                </div>
+                <span class="shortcut-desc">Favoriler panelini göster/gizle</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">H</kbd>
+                </div>
+                <span class="shortcut-desc">Geçmiş penceresini açar</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">T</kbd>
+                </div>
+                <span class="shortcut-desc">Tema yönetimi penceresini açar</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">P</kbd>
+                </div>
+                <span class="shortcut-desc">Pencere ayarları penceresini açar</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Delete</kbd>
+                </div>
+                <span class="shortcut-desc">Seçili dosyayı siler</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Backspace</kbd>
+                </div>
+                <span class="shortcut-desc">Üst klasöre çıkar</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Enter</kbd>
+                </div>
+                <span class="shortcut-desc">Seçili dosyayı açar/çalıştırır</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="shortcut-keys">
+                    <kbd class="kbd">Escape</kbd>
+                </div>
+                <span class="shortcut-desc">Açık pencereleri kapatır</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- İPUÇLARI -->
+    <section id="tips" class="section">
+        <div class="section-header">
+            <div class="section-icon">💡</div>
+            <div class="section-title-group">
+                <h2 class="section-title">İpuçları ve Püf Noktaları</h2>
+                <p class="section-subtitle">Programı daha verimli kullanmak için öneriler</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🚀</span> Performans İpuçları</h3>
+            <div class="card-content">
+                <ul>
+                    <li>Büyük klasörler için lazy loading kullanılır, ilk açılış biraz zaman alabilir</li>
+                    <li>Hariç tutma listesini doğru yapılandırarak gereksiz dosyaları filtreleyebilirsiniz</li>
+                    <li><code>node_modules</code>, <code>__pycache__</code> gibi büyük klasörleri hariç tutun</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">💾</span> Otomatik Kayıt</h3>
+            <div class="card-content">
+                <ul>
+                    <li>Pencere boyutları ve konumları otomatik kaydedilir</li>
+                    <li>Sütun genişlikleri klasör bazında hatırlanır</li>
+                    <li>Son açılan klasör program başlangıcında yüklenir</li>
+                    <li>Tema ayarları kalıcı olarak saklanır</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🛡️</span> Güvenlik</h3>
+            <div class="card-content">
+                <ul>
+                    <li><code>.exe</code> dosyaları çalıştırılmadan önce onay istenir</li>
+                    <li>ZIP içindeki Python dosyaları salt okunur modda açılır</li>
+                    <li>Silme işlemleri geri alınamaz, dikkatli olun</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><span class="card-title-icon">🔧</span> Sorun Giderme</h3>
+            <div class="card-content">
+                <ul>
+                    <li><strong>Dosya listesi yüklenmiyor:</strong> <kbd class="kbd">F5</kbd> ile yenileyin</li>
+                    <li><strong>Pencere konumu bozuk:</strong> <strong>Ayarlar → Pencere Ayarları</strong>'ndan sıfırlayın</li>
+                    <li><strong>Python çalışmıyor:</strong> Python'un PATH'e eklendiğinden emin olun</li>
+                    <li><strong>Karakter sorunu:</strong> UTF-8 encoding kullanıldığından emin olun</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#giris">Başa Dön</a>
+            <a href="#shortcuts">Kısayollar</a>
+            <a href="#tips">İpuçları</a>
+        </div>
+        <p>© 2026 Python Program Yöneticisi v1.4 - Tüm hakları saklıdır.</p>
+    </footer>
+
+</main>
+
+<!-- JavaScript -->
+<script>
+    // Sidebar active link tracking
+    document.addEventListener('DOMContentLoaded', function() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.section');
+        
+        // Intersection Observer for active section
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === '#' + id) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, { rootMargin: '-20% 0px -80% 0px' });
+        
+        sections.forEach(section => observer.observe(section));
+    });
+    
+    // Search functionality
+    function searchHelp() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const sections = document.querySelectorAll('.section');
+        
+        if (input.length < 2) {
+            sections.forEach(s => s.style.display = 'block');
+            return;
+        }
+        
+        sections.forEach(section => {
+            const text = section.textContent.toLowerCase();
+            section.style.display = text.includes(input) ? 'block' : 'none';
+        });
+    }
+    
+    // Accordion functionality
+    function toggleAccordion(trigger) {
+        const content = trigger.nextElementSibling;
+        const isActive = trigger.classList.contains('active');
+        
+        // Close all accordions in the same container
+        const container = trigger.closest('.card-content');
+        if (container) {
+            container.querySelectorAll('.accordion-trigger').forEach(t => {
+                t.classList.remove('active');
+                t.nextElementSibling.classList.remove('active');
+            });
+        }
+        
+        // Toggle current if it wasn't active
+        if (!isActive) {
+            trigger.classList.add('active');
+            content.classList.add('active');
+        }
+    }
+    
+    // Smooth scroll for nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetSection = document.querySelector(targetId);
+            if (targetSection) {
+                targetSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

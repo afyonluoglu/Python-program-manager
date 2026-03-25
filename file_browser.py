@@ -266,21 +266,21 @@ class FileBrowser:
                     elif item_name_lower.endswith((".md", ".markdown")):
                         file_stat = os.stat(item_path)
                         size_in_bytes = file_stat.st_size
-                        description = f"Markdown Dosyası [{self.format_file_size(size_in_bytes)}]"
+                        description = f"Markdown [{self.format_file_size(size_in_bytes)}]"
                         current_icon = self.app.file_icon if hasattr(self.app, 'file_icon') else None
                         file_type_tag = "markdown_file"
                     elif item_name_lower.endswith(".zip"):
                         file_stat = os.stat(item_path)
                         mod_time_for_desc = datetime.fromtimestamp(file_stat.st_mtime).strftime(datetime_str)
                         size_in_bytes = file_stat.st_size
-                        description = f"ZIP Arşivi - {self.format_file_size(size_in_bytes)}"
+                        description = f"ZIP - {self.format_file_size(size_in_bytes)}"
                         current_icon = self.app.zip_icon if hasattr(self.app, 'zip_icon') else None
                         file_type_tag = "zip_file"
                     elif item_name_lower.endswith(".exe"):
                         file_stat = os.stat(item_path)
                         mod_time_for_desc = datetime.fromtimestamp(file_stat.st_mtime).strftime(datetime_str)
                         size_in_bytes = file_stat.st_size
-                        description = f"EXE Uygulaması - {self.format_file_size(size_in_bytes)}"
+                        description = f"Uygulama - {self.format_file_size(size_in_bytes)}"
                         current_icon = self.app.exe_icon if hasattr(self.app, 'exe_icon') else None
                         file_type_tag = "exe_file"
                     elif item_name_lower.endswith(".db"):
@@ -288,7 +288,7 @@ class FileBrowser:
                             file_stat = os.stat(item_path)
                             mod_time_for_desc = datetime.fromtimestamp(file_stat.st_mtime).strftime(datetime_str)
                             size_in_bytes = file_stat.st_size
-                            description = f"Veritabanı Dosyası - {self.format_file_size(size_in_bytes)}"
+                            description = f"Veritabanı - {self.format_file_size(size_in_bytes)}"
                         except OSError:
                             description = "Veritabanı Dosyası"
                         current_icon = self.app.db_icon if hasattr(self.app, 'db_icon') else None

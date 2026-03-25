@@ -157,6 +157,8 @@ class UIManager:
 
         settings_menu = tk.Menu(self.app.menu_bar, tearoff=0)
         self.app.menu_bar.add_cascade(label="Ayarlar", menu=settings_menu)
+        settings_menu.add_command(label="Genel Ayarlar...", command=self.app.open_general_settings_dialog)
+        settings_menu.add_separator()
         settings_menu.add_command(label="Pencere Ayarları...", command=self.app.open_window_settings_dialog, accelerator="Ctrl+P")
 
         view_menu = tk.Menu(self.app.menu_bar, tearoff=0)

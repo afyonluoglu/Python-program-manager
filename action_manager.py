@@ -21,9 +21,9 @@ class ActionManager:
         dialog.title("Sıkıştırma Seçenekleri")
         dialog.transient(self.app)
         dialog.grab_set()
-        dialog.resizable(False, False)
+        dialog.resizable(True, True)
 
-        self.app.center_window(dialog, 350, 250)
+        self.app.center_window(dialog, 480, 550)
 
         main_frame = ttk.Frame(dialog, padding="10")
         main_frame.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
@@ -35,14 +35,33 @@ class ActionManager:
         file_pattern_var = tk.StringVar(value="*.*")
         ttk.Entry(main_frame, textvariable=file_pattern_var, width=40).pack(fill='x', expand=True, pady=(0,5))
 
-        ttk.Label(main_frame, text="ZIP Dosya Adı:").pack(anchor='w', pady=(5,0))
+        # Exclusion pattern bölümü
+        ttk.Label(main_frame, text="Hariç Tutulacaklar (örn: *.doc, build\\*.*, test\\*):").pack(anchor='w', pady=(5,0))
+        # Daha önce kaydedilmiş exclusion pattern'i getir
+        saved_exclusion = self.app.db.get_compression_exclusion(folder_path) or ""
+        exclusion_pattern_var = tk.StringVar(value=saved_exclusion)
+        ttk.Entry(main_frame, textvariable=exclusion_pattern_var, width=40).pack(fill='x', expand=True, pady=(0,5))
+        ttk.Label(main_frame, text="(Virgülle ayırarak birden fazla desen girebilirsiniz)", font=("TkDefaultFont", 8)).pack(anchor='w')
+
+        # Global Exclusion List bilgisi
+        global_exclusion = self.app.db.get_global_exclusion_list() or ""
+        if global_exclusion:
+            ttk.Separator(main_frame, orient='horizontal').pack(fill='x', pady=(10, 5))
+            ttk.Label(main_frame, text="Program Geneli Hariç Tutma Listesi:", foreground="#6B2525").pack(anchor='w')
+            global_exclusion_label = ttk.Label(main_frame, text=global_exclusion, 
+                                                foreground="#464646", wraplength=500)
+            global_exclusion_label.pack(anchor='w', pady=(2, 5))
+            ttk.Label(main_frame, text="(Bu liste otomatik olarak uygulanacaktır)", 
+                      font=("TkDefaultFont", 8), foreground="#192C60").pack(anchor='w')
+
+        ttk.Label(main_frame, text="ZIP Dosya Adı:").pack(anchor='w', pady=(10,0))
         # yedekleme dosyası ismi için varsayılan ad
         default_zip_name = f"{os.path.basename(folder_path)}_{datetime.now().strftime('%Y%m%d_%H%M')}.zip"
         zip_name_var = tk.StringVar(value=default_zip_name)
         ttk.Entry(main_frame, textvariable=zip_name_var, width=40).pack(fill='x', expand=True, pady=(0,10))
 
         dialog.update_idletasks()
-        desired_min_height = 280
+        desired_min_height = 510
         calculated_content_height = dialog.winfo_reqheight() + 20
         final_dialog_height = max(desired_min_height, calculated_content_height)
         self.app.center_window(dialog, dialog.winfo_reqwidth() + 40, final_dialog_height)
@@ -51,8 +70,19 @@ class ActionManager:
         button_frame.pack(pady=(10,0), fill='x')
 
         def on_ok():
+            # Exclusion pattern'i kaydet
+            user_exclusion_pattern = exclusion_pattern_var.get().strip()
+            self.app.db.set_compression_exclusion(folder_path, user_exclusion_pattern)
+            
+            # Global exclusion list ile birleştir
+            combined_exclusion = self._combine_exclusion_patterns(user_exclusion_pattern, global_exclusion)
+            
+            print(f"🔧 DEBUG: Kullanıcı exclusion: '{user_exclusion_pattern}'")
+            print(f"🔧 DEBUG: Global exclusion: '{global_exclusion}'")
+            print(f"🔧 DEBUG: Birleştirilmiş exclusion: '{combined_exclusion}'")
+            
             dialog.destroy()
-            self._execute_compression(folder_path, include_subfolders_var.get(), file_pattern_var.get(), zip_name_var.get())
+            self._execute_compression(folder_path, include_subfolders_var.get(), file_pattern_var.get(), zip_name_var.get(), combined_exclusion)
 
         def on_cancel():
             dialog.destroy()
@@ -65,7 +95,16 @@ class ActionManager:
         dialog.bind("<Escape>", lambda e: on_cancel())
         self.app.wait_window(dialog)
 
-    def _execute_compression(self, source_folder_path, include_subfolders, file_pattern, user_zip_filename):
+    def _combine_exclusion_patterns(self, user_pattern, global_pattern):
+        """Kullanıcı ve global exclusion pattern'lerini birleştirir."""
+        patterns = set()
+        if user_pattern:
+            patterns.update([p.strip() for p in user_pattern.split(',') if p.strip()])
+        if global_pattern:
+            patterns.update([p.strip() for p in global_pattern.split(',') if p.strip()])
+        return ", ".join(sorted(patterns))
+
+    def _execute_compression(self, source_folder_path, include_subfolders, file_pattern, user_zip_filename, exclusion_pattern=""):
         # backup_dir_name = "backups" # utils'den BACKUP_FOLDER_BASENAME kullanılacak
         abs_source_folder_path = os.path.abspath(source_folder_path)
         abs_backup_dir_path = os.path.abspath(os.path.join(self.app.base_path, BACKUP_FOLDER_BASENAME))
@@ -84,11 +123,14 @@ class ActionManager:
         self.app.update_idletasks()
         self.app.long_operation_in_progress = True
         
+        print(f"🔧 DEBUG: Sıkıştırma başlatılıyor - Kaynak: {abs_source_folder_path}")
+        print(f"🔧 DEBUG: Exclusion pattern: '{exclusion_pattern}'")
+        
         thread = threading.Thread(target=operations.perform_compression_in_thread,
                                    args=(self.app, abs_source_folder_path, include_subfolders,
                                          abs_zip_file_path, normcase_abs_zip_file_path,
-                                         abs_backup_dir_path, normcase_abs_backup_dir_path, folder_name, # backup_dir_name operations'a gönderiliyor
-                                         BACKUP_FOLDER_BASENAME, file_pattern)) # Burada da BACKUP_FOLDER_BASENAME kullanılıyor
+                                         abs_backup_dir_path, normcase_abs_backup_dir_path, folder_name,
+                                         BACKUP_FOLDER_BASENAME, file_pattern, exclusion_pattern))
         thread.daemon = True
         thread.start()
 
