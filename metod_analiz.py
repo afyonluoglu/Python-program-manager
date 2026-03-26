@@ -280,8 +280,8 @@ class MethodAnalyzer:
         
         return False
     
-    def _find_local_imports(self, file_path, visited_files=None):
-        """Dosyanın import ettiği yerel Python dosyalarını recursive olarak bulur."""
+    def _find_local_imports(self, file_path, visited_files=None, base_dir=None):
+        """Dosyanın import ettiği yerel Python dosyalarını recursive olarak bulur - alt klasörler dahil."""
         if visited_files is None:
             visited_files = set()
         
@@ -293,6 +293,10 @@ class MethodAnalyzer:
         imported_files = []
         file_dir = os.path.dirname(file_path)
         
+        # İlk çağrıda base_dir'i ayarla
+        if base_dir is None:
+            base_dir = file_dir
+        
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -303,52 +307,29 @@ class MethodAnalyzer:
                 if isinstance(node, ast.Import):
                     for alias in node.names:
                         module_name = alias.name
-                        # Tek modül adı (örn: import utils)
-                        potential_file = os.path.join(file_dir, f"{module_name}.py")
-                        if os.path.exists(potential_file) and potential_file not in visited_files:
+                        # Yerel import dosyasını bul
+                        potential_file = self._resolve_local_import(module_name, file_dir, base_dir)
+                        if potential_file and potential_file not in visited_files:
                             imported_files.append(potential_file)
                             print(f"   📁 Import bulundu: {os.path.basename(potential_file)} <- {os.path.basename(file_path)}")
                             
                             # Bu dosyanın da import'larını recursive olarak bul
-                            nested_imports = self._find_local_imports(potential_file, visited_files.copy())
+                            nested_imports = self._find_local_imports(potential_file, visited_files.copy(), base_dir)
                             imported_files.extend(nested_imports)
                 
                 elif isinstance(node, ast.ImportFrom):
                     if node.module:
                         module_name = node.module
                         
-                        # Aynı klasörden import (örn: from utils import something)
-                        potential_file = os.path.join(file_dir, f"{module_name}.py")
-                        if os.path.exists(potential_file) and potential_file not in visited_files:
+                        # Yerel import dosyasını bul
+                        potential_file = self._resolve_local_import(module_name, file_dir, base_dir)
+                        if potential_file and potential_file not in visited_files:
                             imported_files.append(potential_file)
                             print(f"   📁 From-Import bulundu: {os.path.basename(potential_file)} <- {os.path.basename(file_path)}")
                             
                             # Bu dosyanın da import'larını recursive olarak bul
-                            nested_imports = self._find_local_imports(potential_file, visited_files.copy())
+                            nested_imports = self._find_local_imports(potential_file, visited_files.copy(), base_dir)
                             imported_files.extend(nested_imports)
-                        
-                        # Alt klasörlerden import (örn: from utils.helper import something)
-                        if '.' in module_name:
-                            parts = module_name.split('.')
-                            # utils.helper -> utils/helper.py
-                            potential_path = os.path.join(file_dir, *parts[:-1], f"{parts[-1]}.py")
-                            if os.path.exists(potential_path) and potential_path not in visited_files:
-                                imported_files.append(potential_path)
-                                print(f"   📁 Nested Import bulundu: {os.path.relpath(potential_path, file_dir)} <- {os.path.basename(file_path)}")
-                                
-                                # Bu dosyanın da import'larını recursive olarak bul
-                                nested_imports = self._find_local_imports(potential_path, visited_files.copy())
-                                imported_files.extend(nested_imports)
-                            
-                            # utils.helper -> utils/__init__.py (paket import'u)
-                            package_init = os.path.join(file_dir, *parts, "__init__.py")
-                            if os.path.exists(package_init) and package_init not in visited_files:
-                                imported_files.append(package_init)
-                                print(f"   📦 Package Import bulundu: {os.path.relpath(package_init, file_dir)} <- {os.path.basename(file_path)}")
-                                
-                                # Bu dosyanın da import'larını recursive olarak bul
-                                nested_imports = self._find_local_imports(package_init, visited_files.copy())
-                                imported_files.extend(nested_imports)
     
         except Exception as e:
             print(f"❗ HATA: {file_path} import analizi sırasında hata: {e}")
@@ -360,6 +341,117 @@ class MethodAnalyzer:
                 unique_imports.append(imp)
         
         return unique_imports
+    
+    def _resolve_local_import(self, module_name, file_dir, base_dir):
+        """Import adını dosya yoluna çevirir - sadece proje dizini içindeki dosyaları bulur."""
+        # Python builtin ve standart kütüphane kontrolü
+        import sys
+        builtin_modules = set(sys.builtin_module_names)
+        stdlib_modules = {
+            'os', 'sys', 'datetime', 'json', 'csv', 'sqlite3', 'tkinter', 'threading',
+            'subprocess', 'shutil', 'pathlib', 're', 'math', 'random', 'collections',
+            'itertools', 'functools', 'operator', 'time', 'urllib', 'http', 'email',
+            'html', 'xml', 'zipfile', 'tarfile', 'gzip', 'pickle', 'hashlib', 'hmac',
+            'base64', 'uuid', 'logging', 'unittest', 'doctest', 'argparse', 'configparser',
+            'io', 'tempfile', 'glob', 'fnmatch', 'platform', 'socket', 'ssl', 'ftplib',
+            'smtplib', 'imaplib', 'poplib', 'telnetlib', 'webbrowser', 'ast', 'inspect',
+            'typing', 'dataclasses', 'abc', 'copy', 'enum', 'traceback', 'warnings',
+            'contextlib', 'decimal', 'fractions', 'statistics', 'struct', 'codecs',
+            'textwrap', 'difflib', 'pprint', 'reprlib', 'heapq', 'bisect', 'array',
+            'weakref', 'types', 'gc', 'dis', 'atexit', 'queue', 'asyncio', 'concurrent',
+            'multiprocessing', 'signal', 'mmap', 'ctypes', 'tkcalendar', 'customtkinter',
+            'PIL', 'numpy', 'pandas', 'matplotlib', 'pygame', 'requests', 'bs4',
+            'flask', 'django', 'scipy', 'cv2', 'sklearn', 'tensorflow', 'torch'
+        }
+        
+        main_module = module_name.split('.')[0]
+        
+        if main_module in builtin_modules or main_module in stdlib_modules:
+            return None  # Standart kütüphane veya yaygın üçüncü taraf kütüphane
+        
+        module_parts = module_name.split('.')
+        
+        # Projeyi sınırla - sadece base_dir altındaki dosyaları kabul et
+        def is_within_project(path):
+            """Dosyanın proje dizini içinde olup olmadığını kontrol eder."""
+            try:
+                abs_path = os.path.abspath(path)
+                abs_base = os.path.abspath(base_dir)
+                # site-packages kontrolü
+                if 'site-packages' in abs_path.lower() or 'dist-packages' in abs_path.lower():
+                    return False
+                # Proje dizini dışındaki dosyaları reddet
+                return abs_path.startswith(abs_base)
+            except:
+                return False
+        
+        # 1. Aynı dizinde .py dosyası ara
+        possible_paths = [
+            os.path.join(file_dir, f"{module_name}.py"),
+            os.path.join(file_dir, module_name, '__init__.py'),
+            os.path.join(file_dir, main_module + '.py'),
+            os.path.join(file_dir, main_module, '__init__.py'),
+            os.path.join(base_dir, f"{module_name}.py"),
+            os.path.join(base_dir, module_name, '__init__.py'),
+            os.path.join(base_dir, main_module + '.py'),
+            os.path.join(base_dir, main_module, '__init__.py')
+        ]
+        
+        # 2. Noktalı importlar için (örn: mixins.helper -> mixins/helper.py)
+        if len(module_parts) > 1:
+            # file_dir'de ara
+            subdir_path = os.path.join(file_dir, *module_parts[:-1], f"{module_parts[-1]}.py")
+            possible_paths.append(subdir_path)
+            
+            subdir_init = os.path.join(file_dir, *module_parts, '__init__.py')
+            possible_paths.append(subdir_init)
+            
+            # base_dir'de ara  
+            base_subdir_path = os.path.join(base_dir, *module_parts[:-1], f"{module_parts[-1]}.py")
+            possible_paths.append(base_subdir_path)
+            
+            base_subdir_init = os.path.join(base_dir, *module_parts, '__init__.py')
+            possible_paths.append(base_subdir_init)
+            
+            # Tam yol: mixins/helper.py
+            full_path = os.path.join(file_dir, *module_parts) + '.py'
+            possible_paths.append(full_path)
+            
+            full_path_base = os.path.join(base_dir, *module_parts) + '.py'
+            possible_paths.append(full_path_base)
+        
+        # Önce direkt yolları kontrol et
+        for path in possible_paths:
+            if os.path.exists(path) and is_within_project(path):
+                return os.path.abspath(path)
+        
+        # 3. Sadece base_dir altında recursive arama yap
+        for root, dirs, files in os.walk(base_dir):
+            # __pycache__, .git, venv gibi klasörleri atla
+            dirs[:] = [d for d in dirs if d not in ['__pycache__', '.git', '.vscode', 'venv', '.venv', 'env', '__pypackages__']]
+            
+            # main_module.py dosyasını ara
+            target_file = main_module + '.py'
+            if target_file in files:
+                found_path = os.path.join(root, target_file)
+                if is_within_project(found_path):
+                    return os.path.abspath(found_path)
+            
+            # main_module klasörünü ara (paket)
+            if main_module in dirs:
+                # Paket içindeki spesifik modülü ara
+                if len(module_parts) > 1:
+                    specific_module = module_parts[-1] + '.py'
+                    specific_path = os.path.join(root, main_module, specific_module)
+                    if os.path.exists(specific_path) and is_within_project(specific_path):
+                        return os.path.abspath(specific_path)
+                
+                # __init__.py var mı kontrol et
+                init_path = os.path.join(root, main_module, '__init__.py')
+                if os.path.exists(init_path) and is_within_project(init_path):
+                    return os.path.abspath(init_path)
+        
+        return None
     
     def _find_unused_methods(self):
         """Tanımlı olduğu halde kullanılmayan metodları bulur."""

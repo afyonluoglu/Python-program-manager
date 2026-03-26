@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 import json # For loading/saving column widths
 import datetime
+from tkcalendar import DateEntry  # Takvim widget'ı için eklendi
 
 class HistoryManager:
     def __init__(self, app_instance):
@@ -62,6 +63,10 @@ class HistoryManager:
             elif opt == "Son 6 Ay":
                 start = today - datetime.timedelta(days=180)
                 end = today
+            elif opt == "Manuel":
+                # Manuel seçimde tarihleri değiştirme, sadece filtreyi güncelle
+                update_history_filter()
+                return
             else:  # Hepsi
                 start_date_var.set("")
                 end_date_var.set("")
@@ -72,10 +77,24 @@ class HistoryManager:
             update_history_filter()
 
         ttk.Label(filter_controls_frame, text="Tarih Aralığı:").pack(side=tk.LEFT, padx=5)
-        ttk.Combobox(filter_controls_frame, textvariable=option_var, values=["Bugün", "Dün", "Son Hafta", "Son Ay", "Son 3 Ay", "Son 6 Ay", "Hepsi"], state="readonly", width=10).pack(side=tk.LEFT, padx=5)
-        ttk.Entry(filter_controls_frame, textvariable=start_date_var, width=12).pack(side=tk.LEFT)
+        ttk.Combobox(filter_controls_frame, textvariable=option_var, values=["Bugün", "Dün", "Son Hafta", "Son Ay", "Son 3 Ay", "Son 6 Ay", "Hepsi", "Manuel"], state="readonly", width=10).pack(side=tk.LEFT, padx=5)
+        
+        # DateEntry takvim widget'ları ile tarih seçimi
+        start_date_entry = DateEntry(filter_controls_frame, textvariable=start_date_var, width=12, 
+                                     date_pattern='yyyy-mm-dd', locale='tr_TR')
+        start_date_entry.pack(side=tk.LEFT)
         ttk.Label(filter_controls_frame, text=" - ").pack(side=tk.LEFT)
-        ttk.Entry(filter_controls_frame, textvariable=end_date_var, width=12).pack(side=tk.LEFT)
+        end_date_entry = DateEntry(filter_controls_frame, textvariable=end_date_var, width=12,
+                                   date_pattern='yyyy-mm-dd', locale='tr_TR')
+        end_date_entry.pack(side=tk.LEFT)
+        
+        # Takvimden tarih seçildiğinde listeyi otomatik güncelle
+        def on_date_selected(event=None):
+            option_var.set("Manuel")  # Özel seçim yapıldığında combobox'ı temizle
+            update_history_filter()
+        
+        start_date_entry.bind("<<DateEntrySelected>>", on_date_selected)
+        end_date_entry.bind("<<DateEntrySelected>>", on_date_selected)
 
         all_history_data = self.app.db.get_history() 
 

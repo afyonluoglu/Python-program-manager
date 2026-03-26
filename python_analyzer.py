@@ -60,12 +60,33 @@ class DependencyAnalyzer:
         project_dirs = set()
         local_modules = set()
         
+        # Ana proje dizini (tüm dosyaların ortak üst dizini)
+        if project_files:
+            base_dir = os.path.dirname(project_files[0])
+        else:
+            base_dir = ""
+        
         for file_path in project_files:
             project_dirs.add(os.path.dirname(file_path))
             # Dosya adını .py uzantısız al (yerel modül adı)
             module_name = os.path.splitext(os.path.basename(file_path))[0]
             if module_name != '__init__':  # __init__.py dosyalarını hariç tut
                 local_modules.add(module_name)
+        
+        # Alt klasörlerdeki tüm Python dosyalarını da yerel modül olarak ekle
+        if base_dir:
+            for root, dirs, files in os.walk(base_dir):
+                # __pycache__, .git, venv gibi klasörleri atla
+                dirs[:] = [d for d in dirs if d not in ['__pycache__', '.git', '.vscode', 'venv', '.venv', 'env', '__pypackages__']]
+                
+                for file in files:
+                    if file.endswith('.py') and file != '__init__.py':
+                        module_name = os.path.splitext(file)[0]
+                        local_modules.add(module_name)
+                
+                # Alt klasör isimlerini de yerel modül olarak ekle (paket olabilirler)
+                for dir_name in dirs:
+                    local_modules.add(dir_name)
         
         # Her dosyadan import'ları çıkar
         for file_path in project_files:
@@ -74,32 +95,15 @@ class DependencyAnalyzer:
                 all_imports.update(file_imports)
             except Exception as e:
                 print(f"❗ Import analizi hatası {file_path}: {e}")
-          # Import'ları kategorize et
+        
+        # Import'ları kategorize et
         for import_name in all_imports:
             # Yerel modül kontrolü
             if import_name in local_modules:
                 continue  # Yerel modülleri atla
             
-            # Yerel dizin/klasör kontrolü 
-            is_local_module = False
-            for project_dir in project_dirs:
-                # .py dosyası var mı kontrol et
-                potential_file = os.path.join(project_dir, f"{import_name}.py")
-                if os.path.exists(potential_file):
-                    is_local_module = True
-                    break
-                
-                # Klasör ve __init__.py dosyası var mı kontrol et
-                potential_package = os.path.join(project_dir, import_name)
-                if os.path.isdir(potential_package):
-                    init_file = os.path.join(potential_package, "__init__.py")
-                    if os.path.exists(init_file):
-                        is_local_module = True
-                        break
-                    # __init__.py yoksa da klasör varsa yerel modül olarak kabul et
-                    # Çünkü proje içindeki klasörler paket değil
-                    is_local_module = True
-                    break
+            # Yerel dizin/klasör kontrolü - recursive arama ile
+            is_local_module = self._is_local_module(import_name, base_dir, project_dirs)
             
             if is_local_module:
                 continue  # Yerel modülleri/klasörleri atla
@@ -123,6 +127,39 @@ class DependencyAnalyzer:
             'requirements': self._generate_requirements(installed_packages),
             'pip_install_command': self._generate_pip_command(missing_packages)
         }
+    
+    def _is_local_module(self, import_name: str, base_dir: str, project_dirs: set) -> bool:
+        """Import'ın yerel bir modül olup olmadığını kontrol eder - alt klasörler dahil."""
+        if not base_dir:
+            return False
+            
+        # Önce direkt proje dizinlerinde ara
+        for project_dir in project_dirs:
+            # .py dosyası var mı kontrol et
+            potential_file = os.path.join(project_dir, f"{import_name}.py")
+            if os.path.exists(potential_file):
+                return True
+            
+            # Klasör ve __init__.py dosyası var mı kontrol et
+            potential_package = os.path.join(project_dir, import_name)
+            if os.path.isdir(potential_package):
+                return True
+        
+        # Alt klasörlerde recursive arama yap
+        for root, dirs, files in os.walk(base_dir):
+            # __pycache__, .git, venv gibi klasörleri atla
+            dirs[:] = [d for d in dirs if d not in ['__pycache__', '.git', '.vscode', 'venv', '.venv', 'env', '__pypackages__']]
+            
+            # .py dosyası ara
+            target_file = f"{import_name}.py"
+            if target_file in files:
+                return True
+            
+            # Klasör olarak ara
+            if import_name in dirs:
+                return True
+        
+        return False
     
     def _extract_imports_from_file(self, file_path: str) -> Set[str]:
         """Dosyadan import'ları çıkar"""
@@ -552,10 +589,30 @@ DOSYA LİSTESİ
 
 """
         
-        for i, file_path in enumerate(results['project_files'], 1):
-            file_name = os.path.basename(file_path)
-            file_stats = results['file_details'][file_path]['code_stats']
-            content += f"{i:2d}. {file_name} ({file_stats['total_lines']} satır)\n"
+        # Dosyaları klasörlere göre grupla
+        base_dir = os.path.dirname(results['main_file'])
+        folder_files = {}  # {folder: [(file_path, rel_path), ...]}
+        
+        for file_path in results['project_files']:
+            rel_path = os.path.relpath(file_path, base_dir)
+            folder = os.path.dirname(rel_path) if os.path.dirname(rel_path) else ''
+            if folder not in folder_files:
+                folder_files[folder] = []
+            folder_files[folder].append((file_path, rel_path))
+        
+        # Klasörleri sırala (ana klasör önce, sonra alt klasörler alfabetik)
+        sorted_folders = sorted(folder_files.keys(), key=lambda x: (x != '', x))
+        
+        file_index = 1
+        for folder in sorted_folders:
+            if folder:
+                content += f"\n[{folder}]\n"
+            
+            for file_path, rel_path in folder_files[folder]:
+                file_stats = results['file_details'][file_path]['code_stats']
+                display_name = rel_path.replace('/', '\\')
+                content += f"{file_index:2d}. {display_name} ({file_stats['total_lines']} satır)\n"
+                file_index += 1
         
         text_widget.insert(tk.END, content)
         text_widget.config(state=tk.DISABLED)
@@ -590,23 +647,39 @@ DOSYA LİSTESİ
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Ana dosyayı özel olarak işaretle
+        # Dosyaları klasörlere göre grupla ve listele
+        base_dir = os.path.dirname(results['main_file'])
+        folder_files = {}  # {folder: [(file_path, rel_path), ...]}
+        
         for file_path in results['project_files']:
-            file_name = os.path.basename(file_path)
-            file_stats = results['file_details'][file_path]['code_stats']
-            file_size = results['file_details'][file_path]['file_info']['size']
-            
-            # Ana dosya ise işaretle
-            if file_path == results['main_file']:
-                file_name = f"★ {file_name} (ANA DOSYA)"
-            
-            tree.insert('', tk.END, 
-                       text=file_name,
-                       values=(
-                           f"{file_stats['total_lines']:,}",
-                           f"{file_stats['code_lines']:,}",
-                           f"{file_size/1024:.1f}"
-                       ))
+            rel_path = os.path.relpath(file_path, base_dir)
+            folder = os.path.dirname(rel_path) if os.path.dirname(rel_path) else ''
+            if folder not in folder_files:
+                folder_files[folder] = []
+            folder_files[folder].append((file_path, rel_path))
+        
+        # Klasörleri sırala (ana klasör önce, sonra alt klasörler alfabetik)
+        sorted_folders = sorted(folder_files.keys(), key=lambda x: (x != '', x))
+        
+        for folder in sorted_folders:
+            for file_path, rel_path in folder_files[folder]:
+                file_stats = results['file_details'][file_path]['code_stats']
+                file_size = results['file_details'][file_path]['file_info']['size']
+                
+                # relative path'i Windows formatında göster
+                display_name = rel_path.replace('/', '\\')
+                
+                # Ana dosya ise işaretle
+                if file_path == results['main_file']:
+                    display_name = f"★ {display_name} (ANA DOSYA)"
+                
+                tree.insert('', tk.END, 
+                           text=display_name,
+                           values=(
+                               f"{file_stats['total_lines']:,}",
+                               f"{file_stats['code_lines']:,}",
+                               f"{file_size/1024:.1f}"
+                           ))
 
     def _create_project_imports_tab(self, notebook, results):
         """Proje import analizi sekmesini oluşturur."""
@@ -866,7 +939,7 @@ DOSYA LİSTESİ
         return user_imports
 
     def _resolve_import_path(self, module_name, base_dir):
-        """Import adını dosya yoluna çevirir."""
+        """Import adını dosya yoluna çevirir - sadece proje dizini içindeki dosyaları bulur."""
         # Python builtin ve standart kütüphane kontrolü
         builtin_modules = set(sys.builtin_module_names)
         stdlib_modules = {
@@ -876,13 +949,38 @@ DOSYA LİSTESİ
             'html', 'xml', 'zipfile', 'tarfile', 'gzip', 'pickle', 'hashlib', 'hmac',
             'base64', 'uuid', 'logging', 'unittest', 'doctest', 'argparse', 'configparser',
             'io', 'tempfile', 'glob', 'fnmatch', 'platform', 'socket', 'ssl', 'ftplib',
-            'smtplib', 'imaplib', 'poplib', 'telnetlib', 'webbrowser', 'ast', 'inspect'
+            'smtplib', 'imaplib', 'poplib', 'telnetlib', 'webbrowser', 'ast', 'inspect',
+            'typing', 'dataclasses', 'abc', 'copy', 'enum', 'traceback', 'warnings',
+            'contextlib', 'decimal', 'fractions', 'statistics', 'struct', 'codecs',
+            'textwrap', 'difflib', 'pprint', 'reprlib', 'heapq', 'bisect', 'array',
+            'weakref', 'types', 'gc', 'dis', 'atexit', 'queue', 'asyncio', 'concurrent',
+            'multiprocessing', 'signal', 'mmap', 'ctypes',
+            # Yaygın üçüncü taraf kütüphaneler (site-packages)
+            'customtkinter', 'tkcalendar', 'PIL', 'pillow', 'numpy', 'pandas', 
+            'matplotlib', 'pygame', 'requests', 'bs4', 'beautifulsoup4',
+            'flask', 'django', 'scipy', 'cv2', 'opencv', 'sklearn', 'scikit',
+            'tensorflow', 'torch', 'keras', 'pytest', 'setuptools', 'pip',
+            'wheel', 'pyinstaller', 'cx_Freeze', 'PyQt5', 'PyQt6', 'PySide2', 'PySide6'
         }
         
         main_module = module_name.split('.')[0]
         
         if main_module in builtin_modules or main_module in stdlib_modules:
             return None  # Standart kütüphane, bizi ilgilendirmiyor
+        
+        # Proje sınırlarını kontrol eden yardımcı fonksiyon
+        def is_within_project(path):
+            """Dosyanın proje dizini içinde olup olmadığını kontrol eder."""
+            try:
+                abs_path = os.path.abspath(path)
+                abs_base = os.path.abspath(base_dir)
+                # site-packages kontrolü - harici kütüphaneleri reddet
+                if 'site-packages' in abs_path.lower() or 'dist-packages' in abs_path.lower():
+                    return False
+                # Proje dizini dışındaki dosyaları reddet
+                return abs_path.startswith(abs_base)
+            except:
+                return False
         
         # Aynı dizinde .py dosyası ara
         possible_paths = [
@@ -892,25 +990,61 @@ DOSYA LİSTESİ
             os.path.join(base_dir, main_module, '__init__.py')
         ]
         
-        # Alt dizinlerde de ara
+        # Alt dizinlerde de ara (noktalı import için: utils.helper -> utils/helper.py)
         module_parts = module_name.split('.')
         if len(module_parts) > 1:
+            # utils.helper -> utils/helper.py
             subdir_path = os.path.join(base_dir, *module_parts[:-1], module_parts[-1] + '.py')
             possible_paths.append(subdir_path)
             
+            # utils.helper -> utils/helper/__init__.py
             subdir_init_path = os.path.join(base_dir, *module_parts, '__init__.py')
             possible_paths.append(subdir_init_path)
+            
+            # Ayrıca tam yolu da ekle: utils/helper.py
+            full_subdir_path = os.path.join(base_dir, *module_parts) + '.py'
+            possible_paths.append(full_subdir_path)
         
+        # Önce direkt yolları kontrol et
         for path in possible_paths:
-            if os.path.exists(path):
+            if os.path.exists(path) and is_within_project(path):
                 return os.path.abspath(path)
+        
+        # Alt klasörlerde recursive arama yap - sadece proje dizini içinde
+        for root, dirs, files in os.walk(base_dir):
+            # __pycache__, .git, venv gibi klasörleri atla
+            dirs[:] = [d for d in dirs if d not in ['__pycache__', '.git', '.vscode', 'venv', '.venv', 'env', '__pypackages__']]
+            
+            # main_module.py dosyasını ara
+            target_file = main_module + '.py'
+            if target_file in files:
+                found_path = os.path.join(root, target_file)
+                if is_within_project(found_path):
+                    return os.path.abspath(found_path)
+            
+            # main_module/__init__.py paketini ara
+            if main_module in dirs:
+                init_path = os.path.join(root, main_module, '__init__.py')
+                if os.path.exists(init_path) and is_within_project(init_path):
+                    return os.path.abspath(init_path)
+                # __init__.py olmasa bile klasördeki .py dosyalarını kabul et
+                package_dir = os.path.join(root, main_module)
+                if os.path.isdir(package_dir):
+                    # Paket içindeki spesifik modülü ara
+                    if len(module_parts) > 1:
+                        specific_module = module_parts[-1] + '.py'
+                        specific_path = os.path.join(package_dir, specific_module)
+                        if os.path.exists(specific_path) and is_within_project(specific_path):
+                            return os.path.abspath(specific_path)
         
         return None
 
     def _perform_project_analysis(self, main_file_path, all_files):
         """Proje dosyalarının toplu analizini yapar."""
+        base_dir = os.path.dirname(main_file_path)
         results = {
             'main_file': main_file_path,
+            'base_dir': base_dir,
             'project_files': all_files,
             'file_count': len(all_files),
             'file_details': {},
@@ -962,15 +1096,17 @@ DOSYA LİSTESİ
                 results['project_structure']['total_classes'] += len(file_analysis['classes'])
                 
                 # Fonksiyon ve sınıf bilgilerini dosya adıyla birlikte kaydet
+                # Relative path kullanarak alt klasör bilgisini de göster
+                rel_path = os.path.relpath(file_path, base_dir)
                 for func in file_analysis['functions']:
                     func_copy = func.copy()
-                    func_copy['file'] = os.path.basename(file_path)
+                    func_copy['file'] = rel_path
                     func_copy['full_path'] = file_path
                     results['project_structure']['functions'].append(func_copy)
                 
                 for cls in file_analysis['classes']:
                     cls_copy = cls.copy()
-                    cls_copy['file'] = os.path.basename(file_path)
+                    cls_copy['file'] = rel_path
                     cls_copy['full_path'] = file_path
                     results['project_structure']['classes'].append(cls_copy)
                 

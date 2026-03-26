@@ -8,7 +8,7 @@ A comprehensive desktop application for managing and organizing Python programs,
 - **Advanced Python Editor**: Built-in syntax highlighting and code editing capabilities
 - **Code Analysis Tools**: Analyze Python code structure, methods, and dependencies
 - **Theme Management**: Multiple visual themes for personalized experience
-- **History Management**: Track and manage your program execution history
+- **History Management**: Track and manage your program execution history with calendar-based date filtering
 - **Context Menus**: Right-click context menus for quick actions
 - **Markdown Viewer**: Built-in markdown file viewer and editor
 - **Dependency Analysis**: Analyze and visualize project dependencies
@@ -156,9 +156,10 @@ __pycache__, *.pyc, .git, build, dist, node_modules, *env\*.*, *.egg-info
 - Built-in code execution capabilities
 
 #### Analysis Tools
-- **Method Analysis**: Analyze function and method structures
-- **Dependency Analysis**: Visualize project dependencies
-- **Code Structure**: Review code organization and complexity
+- **Method Analysis**: Analyze function and method structures across all project files including subfolders
+- **Dependency Analysis**: Visualize project dependencies with automatic detection of local modules in subfolders
+- **Code Structure**: Review code organization and complexity with recursive import chain discovery
+- **Python Project Analysis**: Comprehensive analysis of Python projects with full subfolder support
 
 #### Theme Management
 - Multiple built-in themes
