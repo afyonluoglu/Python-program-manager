@@ -168,25 +168,40 @@ __pycache__, *.pyc, .git, build, dist, node_modules, *env\*.*, *.egg-info
 
 ## 📁 Project Structure
 
+
 ```
 python_program_manager/
-├── main.py                 # Application entry point
-├── app_gui.py             # Main GUI application class
-├── python_editor.py       # Built-in Python code editor
-├── python_analyzer.py     # Code analysis tools
-├── theme_manager.py       # Theme management system
-├── history_manager.py     # Execution history tracking
-├── db_manager.py          # Database operations
-├── ui_manager.py          # User interface management
-├── ui_dialogs.py          # Dialog windows
-├── ui_menus.py            # Menu systems
-├── requirements.txt       # Python dependencies
-├── README.md              # Project documentation
-├── .gitignore            # Git ignore rules
-├── screenshots/          # Application screenshots
-├── backups/              # Backup files created
-├── icons/                # Icon files used by program
-└── __pycache__/          # Python cache files
+├── main.py                 # Uygulama giriş noktası
+├── main.bat                # Windows için başlatıcı betik
+├── main.exe                # Derlenmiş uygulama (varsa)
+├── app_gui.py              # Ana GUI uygulama sınıfı
+├── python_editor.py        # Dahili Python kod editörü
+├── python_analyzer.py      # Kod analiz araçları
+├── theme_manager.py        # Tema yönetim sistemi
+├── history_manager.py      # Çalıştırma geçmişi takibi
+├── db_manager.py           # Veritabanı işlemleri
+├── exclusion_utils.py      # Hariç tutma listesi yönetimi
+├── execution_manager.py    # Program çalıştırma yönetimi
+├── favorites_manager.py    # Favori programlar yönetimi
+├── file_browser.py         # Dosya tarayıcı bileşeni
+├── icon_loader.py          # Simge yükleyici yardımcıları
+├── metod_analiz.py         # Fonksiyon/metod analiz modülü
+├── operations.py           # Genel işlemler ve yardımcılar
+├── search_manager.py       # Arama yönetimi
+├── custom_widgets.py       # Özel Tkinter widget'ları
+├── utils.py                # Genel yardımcı fonksiyonlar
+├── ui_manager.py           # Arayüz yönetimi
+├── ui_dialogs.py           # Diyalog pencereleri
+├── ui_menus.py             # Menü sistemleri
+├── requirements.txt        # Python bağımlılıkları
+├── README.md               # Proje dokümantasyonu
+├── .gitignore              # Git için hariç tutma kuralları
+├── program_manager_data.db # Uygulama veritabanı dosyası
+├── pymanager_help.html     # Yardım dosyası
+├── screenshots/            # Uygulama ekran görüntüleri
+├── backups/                # Yedek dosyalar
+├── icons/                  # Programda kullanılan simgeler
+└── __pycache__/            # Python önbellek dosyaları
 ```
 
 ## 🔧 Configuration
