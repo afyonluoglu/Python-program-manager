@@ -15,7 +15,25 @@ from utils import ICON_FOLDER, ICON_PYTHON_FILE, ICON_COMPRESS, ICON_EXECUTABLE,
 from ui_dialogs import ZipContentsWindow # ZIP içeriği penceresi
 
 class FileBrowser:
+    """Dosya tarayıcı ve klasör gezinme yöneticisi.
+    
+    Bu sınıf, sol paneldeki klasör ağacını ve sağ paneldeki
+    dosya listesini yönetir. Klasörler arası gezinme, dosya listeleme
+    ve dosya detaylarını gösterme işlevlerini sağlar.
+    
+    Attributes:
+        app: Ana uygulama referansı (App).
+        
+    Example:
+        >>> file_browser = FileBrowser(app_instance)
+        >>> file_browser.populate_tree("C:/Projects")
+    """
     def __init__(self, app_instance):
+        """FileBrowser'ı başlatır.
+        
+        Args:
+            app_instance: Ana uygulama referansı.
+        """
         self.app = app_instance
 
     def populate_tree(self, start_path):

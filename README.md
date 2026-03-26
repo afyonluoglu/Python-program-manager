@@ -190,6 +190,7 @@ python_program_manager/
 ├── search_manager.py       # Arama yönetimi
 ├── custom_widgets.py       # Özel Tkinter widget'ları
 ├── utils.py                # Genel yardımcı fonksiyonlar
+├── constants.py            # Sabitler ve enum tanımları
 ├── ui_manager.py           # Arayüz yönetimi
 ├── ui_dialogs.py           # Diyalog pencereleri
 ├── ui_menus.py             # Menü sistemleri
@@ -246,7 +247,7 @@ These files are automatically created on first run and stored locally.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 Development
+## � Development
 
 ### Setting up Development Environment
 

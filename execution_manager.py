@@ -10,7 +10,7 @@ import platform
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"		# pygame mesajını gizle
 
-import pygame # For playing MP3 files
+import pygame # MP3 dosyalarını çalmak için
 
 class ExecutionManager:
     def __init__(self, app_instance):
@@ -117,20 +117,31 @@ class ExecutionManager:
             messagebox.showerror("Hata", f"'{os.path.basename(file_path)}' açılırken bir hata oluştu:\n{e}", parent=self.app)
 
     def _get_mp3_duration(self, file_path):
-        """Helper to get MP3 duration. Returns 0 if error."""
+        """MP3 dosyasının süresini saniye cinsinden döndürür.
+        
+        Args:
+            file_path: MP3 dosyasının yolu.
+            
+        Returns:
+            float: Dosya süresi (saniye). Hata durumunda 0 döner.
+        """
+        temp_sound = None
         try:
-            # Load as a Sound object to get length, then free it
+            # Süreyi almak için Sound nesnesi olarak yükle, sonra serbest bırak
             temp_sound = pygame.mixer.Sound(file_path)
             duration = temp_sound.get_length()
-            del temp_sound
             return duration
         except pygame.error as e:
             print(f"❗ MP3 süresi alınırken Pygame hatası ({file_path}): {e}")
-            # messagebox.showwarning("MP3 Bilgisi", f"'{os.path.basename(file_path)}' dosyasının süresi alınamadı.\nSebep: {e}", parent=self.app)
             return 0 # Duration unknown
         except Exception as e:
             print(f"❗ MP3 süresi alınırken genel hata ({file_path}): {e}")
             return 0
+        finally:
+            # Kaynağı temizle
+            if temp_sound is not None:
+                del temp_sound
+                temp_sound = None
 
     def play_mp3_file(self, file_path):
         """Plays the specified MP3 file."""

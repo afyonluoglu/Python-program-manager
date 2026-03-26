@@ -8,10 +8,23 @@ from tkinter import messagebox # Hata durumlarında kullanıcıyı bilgilendirme
 
 # --- Veritabanı Yönetimi Sınıfı ---
 class DatabaseManager:
-    """SQLite veritabanı işlemlerini yönetir."""
+    """SQLite veritabanı işlemlerini yönetir.
+    
+    Bu sınıf, uygulama verilerini SQLite veritabanında saklamak ve
+    yönetmek için gerekli tüm CRUD işlemlerini sağlar.
+    
+    Attributes:
+        db_path: Veritabanı dosyasının yolu.
+        conn: SQLite bağlantı nesnesi.
+    """
     def __init__(self, db_path):
+        """DatabaseManager'ı başlatır.
+        
+        Args:
+            db_path: Veritabanı dosyasının yolu.
+        """
         self.db_path = db_path
-        self._conn = None # conn -> _conn (private convention)
+        self.conn = None  # Tutarlı olarak conn kullanılıyor
         self._connect()
         self._create_tables()
         self._migrate_favorites_order_index() # Favoriler için sıralama indeksi göçünü yap
@@ -114,25 +127,113 @@ class DatabaseManager:
         self._execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value), commit=True)
 
     def get_description(self, path):
+        """Tek bir dosya için açıklamayı döndürür.
+        
+        Args:
+            path: Dosya yolu.
+            
+        Returns:
+            str veya None: Dosya açıklaması veya None.
+        """
         row = self._execute("SELECT description FROM file_descriptions WHERE path = ?", (path,), fetchone=True)
         return row['description'] if row else None
 
+    def get_descriptions_batch(self, paths):
+        """Birden fazla dosya için açıklamaları toplu olarak döndürür.
+        
+        Bu metod, her dosya için ayrı sorgu yapmak yerine tek bir sorgu ile
+        tüm açıklamaları alarak performansı artırır.
+        
+        Args:
+            paths: Dosya yollarının listesi.
+            
+        Returns:
+            dict: {dosya_yolu: açıklama} şeklinde sözlük.
+        """
+        if not paths:
+            return {}
+        
+        # SQL IN clause için placeholder'lar oluştur
+        placeholders = ','.join(['?' for _ in paths])
+        query = f"SELECT path, description FROM file_descriptions WHERE path IN ({placeholders})"
+        rows = self._execute(query, tuple(paths), fetchall=True)
+        
+        if rows:
+            return {row['path']: row['description'] for row in rows}
+        return {}
+
     def set_description(self, path, description):
+        """Dosya için açıklama kaydeder veya günceller.
+        
+        Args:
+            path: Dosya yolu.
+            description: Kaydedilecek açıklama. None veya boş ise açıklama silinir.
+        """
         if description:
              self._execute("INSERT OR REPLACE INTO file_descriptions (path, description) VALUES (?, ?)", (path, description), commit=True)
         else:
              self.delete_description(path)
 
     def delete_description(self, path):
+        """Dosya açıklamasını siler.
+        
+        Args:
+            path: Dosya yolu.
+        """
         self._execute("DELETE FROM file_descriptions WHERE path = ?", (path,), commit=True)
 
     def add_history(self, path, event_type="run_normal"):
+        """Çalıştırma geçmişine yeni kayıt ekler.
+        
+        Args:
+            path: Çalıştırılan dosyanın yolu veya işlem açıklaması.
+            event_type: Olay türü (varsayılan: "run_normal").
+        """
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self._execute("INSERT INTO execution_history (path, timestamp, event_type) VALUES (?, ?, ?)",
                       (path, timestamp, event_type), commit=True)
 
     def get_history(self):
+        """Tüm çalıştırma geçmişini döndürür.
+        
+        Returns:
+            list: (zaman_damgası, yol, olay_türü) tuple'larının listesi.
+        """
         rows = self._execute("SELECT timestamp, path, event_type FROM execution_history ORDER BY timestamp DESC", fetchall=True)
+        return [(row['timestamp'], row['path'], row['event_type']) for row in rows] if rows else []
+
+    def get_history_batch(self, start_date=None, end_date=None, event_types=None, limit=100):
+        """Filtrelenmiş çalıştırma geçmişini toplu olarak döndürür.
+        
+        Args:
+            start_date: Başlangıç tarihi (YYYY-MM-DD formatında).
+            end_date: Bitiş tarihi (YYYY-MM-DD formatında).
+            event_types: Filtrelenecek olay türlerinin listesi.
+            limit: Maksimum sonuç sayısı.
+            
+        Returns:
+            list: Filtrelenmiş (zaman_damgası, yol, olay_türü) tuple'ları.
+        """
+        query = "SELECT timestamp, path, event_type FROM execution_history WHERE 1=1"
+        params = []
+        
+        if start_date:
+            query += " AND timestamp >= ?"
+            params.append(start_date)
+        
+        if end_date:
+            query += " AND timestamp <= ?"
+            params.append(end_date + " 23:59:59")
+        
+        if event_types:
+            placeholders = ','.join(['?' for _ in event_types])
+            query += f" AND event_type IN ({placeholders})"
+            params.extend(event_types)
+        
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
+        
+        rows = self._execute(query, tuple(params), fetchall=True)
         return [(row['timestamp'], row['path'], row['event_type']) for row in rows] if rows else []
 
     def save_theme(self, name, config_dict):

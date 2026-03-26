@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import tkinter as tk # App sınıfı tk.Tk'den miras alacağı için burada tk importu gerekmeyebilir.
-from app_gui import App # app_gui.py dosyasından App sınıfını import et
+import tkinter as tk 
+from app_gui import App 
 import platform
 
-# Yüksek DPI ayarları için (Windows'ta bulanıklığı azaltabilir)
 if platform.system() == "Windows":
     try:
         from ctypes import windll

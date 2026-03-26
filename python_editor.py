@@ -16,6 +16,7 @@ class PythonEditor:
         self.file_path = file_path
         self.current_file_path = file_path
         self.is_modified = False
+        self._original_content = ""  # Orijinal içerik (undo karşılaştırması için)
         self.read_only = read_only
         self.found_lines = []  # Bulunan satırların konumlarını takip etmek için liste        
 
@@ -107,7 +108,7 @@ class PythonEditor:
         edit_menu.add_command(label="Bul...", command=self._find, accelerator="Ctrl+F")
         edit_menu.add_command(label="Bul ve Değiştir...", command=self._find_replace, accelerator="Ctrl+H")
         edit_menu.add_separator()
-        edit_menu.add_command(label="Bulunan satıra konumlan", command=self._goto_next_highlighted_line(), accelerator="F3")
+        edit_menu.add_command(label="Bulunan satıra konumlan", command=self._goto_next_highlighted_line, accelerator="F3")
         edit_menu.add_command(label="Bulunan satır renklerini kaldır", command=self._clear_all_highlighted_lines, accelerator="F4")
 
 
@@ -186,7 +187,7 @@ class PythonEditor:
         v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
         
-        # Event bindings
+        # Olay bağlamaları
         self.text_area.bind('<Key>', self._on_key_press)
         self.text_area.bind('<Button-1>', self._on_click)
         self.text_area.bind('<KeyRelease>', self._on_key_release)
@@ -208,41 +209,146 @@ class PythonEditor:
         self._update_line_numbers()
     
     def setup_autocomplete(self):
-        """Otomatik tamamlama olaylarını ayarla"""
+        """Otomatik tamamlama olaylarını ayarla.
+        
+        Ctrl+Space ile manuel tetikleme ve otomatik tetikleme için
+        gerekli event binding'lerini yapılandırır.
+        """
+        # Listbox referansı için başlangıç değeri
+        self._autocomplete_listbox = None
+        # Autocomplete işlemi sırasında focus değişimini engelleme flag'i
+        self._autocomplete_selecting = False
+        # Autocomplete tuş binding ID'leri
+        self._ac_up_id = None
+        self._ac_down_id = None
+        self._ac_return_id = None
+        self._ac_tab_id = None
+        self._ac_escape_id = None
+        self._autocomplete_click_handler_id = None
+        
         self.text_area.bind('<KeyRelease>', self.on_key_release)
-        self.text_area.bind('<Button-1>', self.hide_autocomplete)
-        self.text_area.bind('<FocusOut>', self.hide_autocomplete)
+        # Ctrl+Space için özel binding
+        self.text_area.bind('<Control-space>', self._trigger_autocomplete)
+        # FocusOut için akıllı handler
+        self.text_area.bind('<FocusOut>', self._on_focus_out)
+    
+    def _on_focus_out(self, event=None):
+        """Focus kaybedildiğinde autocomplete'i akıllıca yönetir.
+        
+        Focus autocomplete penceresine geçtiyse kapatmaz,
+        başka bir yere geçtiyse kapatır.
+        """
+        
+        if self._autocomplete_selecting:
+            return
+            
+        if not self.autocomplete_window:
+            return
+            
+        # Focus'un nereye gittiğini kontrol et
+        try:
+            focused_widget = self.window.focus_get()
+            
+            # Autocomplete penceresine veya listbox'a geçtiyse kapatma
+            if focused_widget and self._autocomplete_listbox:
+                if focused_widget == self._autocomplete_listbox:
+                    return
+                if self.autocomplete_window and focused_widget == self.autocomplete_window:
+                    return
+            
+            # Autocomplete widget'larından birine geçtiyse kapat görmezden gel
+            if focused_widget:
+                widget_str = str(focused_widget)
+                if 'autocomplete' in widget_str.lower() or (self.autocomplete_window and widget_str.startswith(str(self.autocomplete_window))):
+                    return
+                    
+            # 100ms gecikme ile kapat (focus değişimi tamamlansın)
+            self.window.after(100, self._delayed_hide_check)
+        except Exception as e:
+            print(f"[DEBUG] _on_focus_out: Hata - {e}")
+    
+    def _delayed_hide_check(self):
+        """Gecikmiş kontrol - focus hala dışarıdaysa kapat."""
+        if not self.autocomplete_window:
+            return
+        if self._autocomplete_selecting:
+            return
+        try:
+            focused_widget = self.window.focus_get()
+            
+            # Focus text_area veya listbox'ta değilse kapat
+            if focused_widget != self.text_area and focused_widget != self._autocomplete_listbox:
+                self.hide_autocomplete()
+        except:
+            pass
+    
+    def _trigger_autocomplete(self, event=None):
+        """Ctrl+Space ile autocomplete'i manuel tetikler.
+        
+        Args:
+            event: Klavye olayı (opsiyonel).
+            
+        Returns:
+            str: "break" - olayın daha fazla işlenmesini engeller.
+        """
+        # Mevcut kelimeyi bul
+        current_pos = self.text_area.index(tk.INSERT)
+        line_start = current_pos.split('.')[0] + '.0'
+        current_line = self.text_area.get(line_start, current_pos)
+        
+        words = re.findall(r'\b\w+$', current_line)
+        self.current_word = words[0] if words else ""
+        
+        self.show_autocomplete()
+        return "break"
     
     def on_key_release(self, event):
-        """Tuş bırakıldığında otomatik tamamlama kontrol et ve satır numaralarını güncelle"""
+        """Tuş bırakıldığında otomatik tamamlama kontrol et ve satır numaralarını güncelle.
+        
+        Args:
+            event: Klavye olayı.
+        """
         # Önce satır numaralarını güncelle
         self._update_line_numbers()
         
-        # Autocomplete kontrolü
-        if event.keysym in ['Up', 'Down', 'Left', 'Right', 'Return', 'Tab']:
+        # Control, Shift, Alt, Space tuşları - autocomplete ile etkileşime girme
+        # Space özellikle Ctrl+Space kombinasyonu için önemli
+        if event.keysym in ['Control_L', 'Control_R', 'Shift_L', 'Shift_R', 'Alt_L', 'Alt_R', 'space']:
+            return  # Bu tuşlar bırakıldığında autocomplete'e dokunma
+        
+        # Autocomplete penceresi açıkken özel tuş işleme
+        if self.autocomplete_window:
+            # Ok tuşları, Enter, Tab, Escape - bunlar özel binding'lerle işleniyor
+            if event.keysym in ['Up', 'Down', 'Return', 'Tab', 'Escape']:
+                return  # Bu tuşlar autocomplete binding'leri tarafından işlenir
+        
+        # Navigasyon tuşlarında autocomplete'i kapat (sol/sağ ok)
+        if event.keysym in ['Left', 'Right']:
             self.hide_autocomplete()
             return
         
-        # Ctrl+Space ile manuel tetikleme
-        if event.state & 0x4 and event.keysym == 'space':
-            self.show_autocomplete()
-            return
-        
-        # Otomatik tetikleme
+        # Otomatik tetikleme (en az 2 karakter yazıldığında)
         current_pos = self.text_area.index(tk.INSERT)
         line_start = current_pos.split('.')[0] + '.0'
         current_line = self.text_area.get(line_start, current_pos)
 
         # Son kelimeyi bul
         words = re.findall(r'\b\w+$', current_line)
-        if words and len(words[0]) >= 2:  # En az 2 karakter yazıldığında
+        if words and len(words[0]) >= 2:
             self.current_word = words[0]
             self.show_autocomplete()
         else:
-            self.hide_autocomplete()
+            # Eğer autocomplete açıksa ve karakter siliniyorsa kapat
+            if self.autocomplete_window:
+                self.hide_autocomplete()
     
     def show_autocomplete(self):
-        """Otomatik tamamlama penceresini göster"""
+        """Otomatik tamamlama penceresini gösterir.
+        
+        Jedi kütüphanesi ile kod analizi yaparak öneriler oluşturur.
+        Jedi başarısız olursa Python anahtar kelimeleri ve built-in
+        fonksiyonlardan yedek öneriler sunar.
+        """
         try:
             # Mevcut metni al
             content = self.text_area.get('1.0', tk.END)
@@ -306,18 +412,23 @@ class PythonEditor:
                     'description': 'Built-in function'
                 })
             
+            
             if self.suggestions:
                 self.create_autocomplete_window()
             else:
                 self.hide_autocomplete()
                 
         except Exception as e:
-            print(f"Autocomplete error: {e}")
+            print(f"Otomatik tamamlama hatası: {e}")
             # Hata durumunda basit anahtar kelime önerileri
             self.fallback_suggestions()
     
     def fallback_suggestions(self):
-        """Jedi hata verirse basit öneriler"""
+        """Jedi hata verirse basit öneriler sunar.
+        
+        Python anahtar kelimeleri ve built-in fonksiyonlardan
+        mevcut kelimeyle başlayan önerileri listeler.
+        """
         try:
             current_pos = self.text_area.index(tk.INSERT)
             line_start = current_pos.split('.')[0] + '.0'
@@ -409,18 +520,23 @@ class PythonEditor:
             self.text_area.focus_set()
             
         except Exception as e:
-            print(f"Create autocomplete window error: {e}")
+            print(f"Otomatik tamamlama penceresi oluşturma hatası: {e}")
             self.hide_autocomplete()
     
     def create_autocomplete_window(self):
-        """Otomatik tamamlama penceresini oluşturur ve olayları yönetir."""
-        print("   # Create autocomplete window called")
+        """Otomatik tamamlama penceresini oluşturur ve olayları yönetir.
+        
+        Kullanıcı önerilerden birini seçerek (tıklama, Enter veya Tab) 
+        kodu tamamlayabilir. Yukarı/Aşağı oklar ile seçenekler arasında
+        gezinebilir, Escape ile pencereyi kapatabilir.
+        """
         self.hide_autocomplete()
         
         try:
             cursor_pos = self.text_area.index(tk.INSERT)
             bbox = self.text_area.bbox(cursor_pos)
-            if not bbox: return
+            if not bbox: 
+                return
 
             x, y, _, _ = bbox
             x += self.text_area.winfo_rootx()
@@ -446,6 +562,9 @@ class PythonEditor:
                 activestyle='none'
             )
             listbox.pack()
+            
+            # Listbox referansını sakla (diğer metodlar için)
+            self._autocomplete_listbox = listbox
 
             for suggestion in self.suggestions:
                 display_text = f"{suggestion['name']} ({suggestion['type']})"
@@ -454,67 +573,131 @@ class PythonEditor:
             if self.suggestions:
                 listbox.selection_set(0)
                 listbox.activate(0)
-            print(f"   # Autocomplete suggestions: {len(self.suggestions)}")
 
             # --- Olay Yöneticileri ---
-            def on_selection(event):
+            def on_selection(event=None):
+                """Seçilen öneriyi editöre ekler."""
                 self.insert_completion(listbox)
                 return "break"
 
-            def on_escape(event):
-                print("   # Escape pressed")
+            def on_escape(event=None):
+                """Autocomplete penceresini kapatır."""
                 self.hide_autocomplete()
                 return "break"
+            
+            def on_listbox_click(event):
+                """Listbox'a tek tıklamayla seçim yapar."""
+                # Seçim sırasında FocusOut'u engelle
+                self._autocomplete_selecting = True
+                
+                # Hangi öğeye tıklandığını belirle
+                index = listbox.nearest(event.y)
+                if index >= 0:
+                    listbox.selection_clear(0, tk.END)
+                    listbox.selection_set(index)
+                    listbox.activate(index)
+                    # Doğrudan seçimi uygula (gecikme olmadan)
+                    self.window.after(50, lambda: self._apply_listbox_selection(listbox))
+                return "break"
+            
+            def on_listbox_release(event):
+                """Mouse bırakıldığında seçim flag'ini kaldır."""
+                # Seçim tamamlandıktan sonra flag'i kaldır
+                self.window.after(200, self._clear_selecting_flag)
+                return "break"
 
-            # Listbox'a özel olaylar
-            listbox.bind('<Double-Button-1>', on_selection)
-            listbox.bind('<Return>', on_selection)
+            # Listbox'a özel olaylar - TEK TIKLAMA desteği
+            listbox.bind('<Button-1>', on_listbox_click)
+            listbox.bind('<ButtonRelease-1>', on_listbox_release)
+            listbox.bind('<Double-Button-1>', lambda e: on_selection())
+            listbox.bind('<Return>', lambda e: on_selection())
             listbox.bind('<Escape>', on_escape)
 
             # Text_area'ya geçici olaylar (popup açıkken)
-            def handle_global_keys(event):
-                if event.keysym == 'Up':
-                    current = listbox.curselection()
-                    if current and current[0] > 0:
-                        listbox.selection_clear(0, tk.END)
-                        listbox.selection_set(current[0] - 1)
-                        listbox.activate(current[0] - 1)
-                        listbox.see(current[0] - 1)
-                    return "break"
-                elif event.keysym == 'Down':
-                    current = listbox.curselection()
-                    if current and current[0] < listbox.size() - 1:
-                        listbox.selection_clear(0, tk.END)
-                        listbox.selection_set(current[0] + 1)
-                        listbox.activate(current[0] + 1)
-                        listbox.see(current[0] + 1)
-                    return "break"
-                elif event.keysym in ['Return', 'Tab']:
-                    on_selection(event)
-                    return "break"
-                elif event.keysym == 'Escape':
-                    on_escape(event)
-                    return "break"
+            # ÖNEMLİ: Ok tuşları ve Enter/Tab için özel binding'ler
+            def handle_up_key(event):
+                """Yukarı ok tuşu - listbox'ta gezinme."""
+                if not self.autocomplete_window or not self._autocomplete_listbox:
+                    return None
+                current = listbox.curselection()
+                if current and current[0] > 0:
+                    listbox.selection_clear(0, tk.END)
+                    listbox.selection_set(current[0] - 1)
+                    listbox.activate(current[0] - 1)
+                    listbox.see(current[0] - 1)
+                return "break"  # Text_area'nın cursor hareketini engelle
             
-            # Handler ID'lerini sakla
-            self._autocomplete_key_handler_id = self.text_area.bind('<Key>', handle_global_keys, add='+')
-            self._autocomplete_click_handler_id = self.text_area.bind('<Button-1>', self.hide_autocomplete, add='+')
-
-            # Focus'u gecikmeli olarak ver
-            # self.window.after(50, listbox.focus_set)
-
+            def handle_down_key(event):
+                """Aşağı ok tuşu - listbox'ta gezinme."""
+                if not self.autocomplete_window or not self._autocomplete_listbox:
+                    return None
+                current = listbox.curselection()
+                if current and current[0] < listbox.size() - 1:
+                    listbox.selection_clear(0, tk.END)
+                    listbox.selection_set(current[0] + 1)
+                    listbox.activate(current[0] + 1)
+                    listbox.see(current[0] + 1)
+                return "break"  # Text_area'nın cursor hareketini engelle
+            
+            def handle_return_key(event):
+                """Enter tuşu - seçimi uygula."""
+                if not self.autocomplete_window or not self._autocomplete_listbox:
+                    return None
+                on_selection()
+                return "break"  # Yeni satır eklenmesini engelle
+            
+            def handle_tab_key(event):
+                """Tab tuşu - seçimi uygula."""
+                if not self.autocomplete_window or not self._autocomplete_listbox:
+                    return None
+                on_selection()
+                return "break"
+            
+            def handle_escape_key(event):
+                """Escape tuşu - autocomplete'i kapat."""
+                if not self.autocomplete_window:
+                    return None
+                on_escape()
+                return "break"
+            
+            def handle_click_outside(event):
+                """Text area'ya tıklandığında autocomplete'i kapat."""
+                if self.autocomplete_window:
+                    self.hide_autocomplete()
+                return None  # Olayın normal işlenmesine izin ver
+            
+            # Her tuş için ayrı binding - event'i engelleyebilmek için
+            # NOT: Bu binding'ler orijinal binding'lerin ÖNÜNE geçer
+            self._ac_up_id = self.text_area.bind('<Up>', handle_up_key)
+            self._ac_down_id = self.text_area.bind('<Down>', handle_down_key)
+            self._ac_return_id = self.text_area.bind('<Return>', handle_return_key)
+            self._ac_tab_id = self.text_area.bind('<Tab>', handle_tab_key)
+            self._ac_escape_id = self.text_area.bind('<Escape>', handle_escape_key)
+            self._autocomplete_click_handler_id = self.text_area.bind('<Button-1>', handle_click_outside, add='+')
+            
         except Exception as e:
-            print(f"Create autocomplete window error: {e}")
             self.hide_autocomplete()
+    
+    def _clear_selecting_flag(self):
+        """Seçim flag'ini temizler."""
+        self._autocomplete_selecting = False
+
+    def _apply_listbox_selection(self, listbox):
+        """Listbox'ta seçili öğeyi uygular (tek tıklama için yardımcı metod)."""
+        if self.autocomplete_window and listbox.curselection():
+            self.insert_completion(listbox)
+        else:
+            print(f"[DEBUG] _apply_listbox_selection: Uygulanamadı - window={self.autocomplete_window is not None}, selection={listbox.curselection() if self.autocomplete_window else 'N/A'}")
 
     def insert_completion(self, listbox):
-        """Seçilen tamamlamayı ekle"""
-        print("   # Insert completion called")
+        """Seçilen tamamlamayı editöre ekler.
+        
+        Args:
+            listbox: Öneri listesini içeren Listbox widget'ı.
+        """
         try:
             selection = listbox.curselection()
-            print(f"   # Selection: {selection}")
             if selection:
-                print(f"   # Selected suggestion: {self.suggestions[selection[0]]}")
                 selected = self.suggestions[selection[0]]
                 
                 # Mevcut kelimeyi bul ve değiştir
@@ -532,7 +715,7 @@ class PythonEditor:
                 self.text_area.insert(tk.INSERT, selected['name'])
 
         except Exception as e:
-            print(f"Insert completion error: {e}")
+            print(f"[DEBUG] insert_completion: HATA - {e}")
         finally:
             self.hide_autocomplete()
     
@@ -546,12 +729,41 @@ class PythonEditor:
             self.autocomplete_window = None
 
     def hide_autocomplete(self, event=None):
-        """Otomatik tamamlama penceresini gizle ve geçici binding'leri temizle."""
-        # Geçici global binding'leri kaldır
-        self.text_area.unbind('<Key>', self._autocomplete_key_handler_id)
-        self.text_area.unbind('<Button-1>', self._autocomplete_click_handler_id)
-        self._autocomplete_key_handler_id = None
-        self._autocomplete_click_handler_id = None
+        """Otomatik tamamlama penceresini gizle ve geçici binding'leri temizle.
+        
+        Args:
+            event: Opsiyonel olay nesnesi (binding'lerden çağrıldığında).
+        """
+        # Autocomplete için eklenen tuş binding'lerini kaldır
+        for attr in ['_ac_up_id', '_ac_down_id', '_ac_return_id', '_ac_tab_id', '_ac_escape_id']:
+            binding_id = getattr(self, attr, None)
+            if binding_id:
+                try:
+                    event_name = {
+                        '_ac_up_id': '<Up>',
+                        '_ac_down_id': '<Down>',
+                        '_ac_return_id': '<Return>',
+                        '_ac_tab_id': '<Tab>',
+                        '_ac_escape_id': '<Escape>'
+                    }.get(attr)
+                    if event_name:
+                        self.text_area.unbind(event_name, binding_id)
+                except tk.TclError:
+                    pass
+                setattr(self, attr, None)
+            
+        if self._autocomplete_click_handler_id:
+            try:
+                self.text_area.unbind('<Button-1>', self._autocomplete_click_handler_id)
+            except tk.TclError:
+                pass  # Binding zaten yoksa hata verme
+            self._autocomplete_click_handler_id = None
+        
+        # Listbox referansını temizle
+        self._autocomplete_listbox = None
+        
+        # Seçim flag'ini temizle
+        self._autocomplete_selecting = False
 
         if self.autocomplete_window:
             try:
@@ -859,6 +1071,12 @@ class PythonEditor:
             self.text_area.delete('1.0', tk.END)
             self.text_area.insert('1.0', content)
             
+            # Undo geçmişini sıfırla - dosya yüklemesi undo'lanabilir olmasın
+            self.text_area.edit_reset()
+            
+            # Orijinal içeriği sakla (undo sonrası karşılaştırma için)
+            self._original_content = content
+            
             # Read-only modda ise tekrar disabled yap
             if self.read_only:
                 self.text_area.config(state='disabled')
@@ -918,8 +1136,9 @@ class PythonEditor:
             self.text_area.edit_undo()
             self._update_line_numbers()
             self._syntax_highlight()
+            self._check_modified_state()
         except tk.TclError:
-            pass
+            pass  # Geri alınacak işlem yok
     
     def _redo(self):
         """Yinele."""
@@ -927,8 +1146,23 @@ class PythonEditor:
             self.text_area.edit_redo()
             self._update_line_numbers()
             self._syntax_highlight()
+            self._check_modified_state()
         except tk.TclError:
             pass
+    
+    def _check_modified_state(self):
+        """Mevcut içeriğin orijinal içerikle aynı olup olmadığını kontrol eder.
+        
+        Undo/Redo işlemlerinden sonra çağrılır ve is_modified flag'ini günceller.
+        """
+        if hasattr(self, '_original_content'):
+            current_content = self.text_area.get('1.0', 'end-1c')
+            if current_content == self._original_content:
+                self.is_modified = False
+                self._update_title()
+            else:
+                self.is_modified = True
+                self._update_title()
     
     def _cut(self):
         """Kes."""

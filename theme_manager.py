@@ -6,7 +6,25 @@ from tkinter import ttk, messagebox, colorchooser
 from utils import DEFAULT_DARK_THEME_COLORS # utils'dan import
 
 class ThemeManager:
+    """Uygulama teması ve renk şeması yönetimini sağlar.
+    
+    Bu sınıf, kullanıcının özel temalar oluşturmasını, kaydetmesini
+    ve uygulamasını sağlar. Treeview, butonlar ve diğer widget'lar
+    için renk özelleştirmesi yapılabilir.
+    
+    Attributes:
+        app: Ana uygulama referansı (App).
+        
+    Example:
+        >>> theme_manager = ThemeManager(app_instance)
+        >>> theme_manager.apply_custom_theme()
+    """
     def __init__(self, app_instance):
+        """ThemeManager'ı başlatır.
+        
+        Args:
+            app_instance: Ana uygulama referansı.
+        """
         self.app = app_instance
 
     def apply_custom_theme(self):

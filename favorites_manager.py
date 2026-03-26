@@ -5,7 +5,25 @@ from tkinter import messagebox, simpledialog # simpledialog eklendi
 import os
 
 class FavoritesManager:
+    """Favori dosyaların yönetimini sağlar.
+    
+    Bu sınıf, kullanıcının favori olarak işaretlediği Python dosyalarını
+    yönetir. Favori ekleme, kaldırma, sıralama ve alias düzenleme
+    işlevlerini içerir.
+    
+    Attributes:
+        app: Ana uygulama referansı (App).
+        
+    Example:
+        >>> favorites_manager = FavoritesManager(app_instance)
+        >>> favorites_manager.add_to_favorites("C:/Projects/main.py")
+    """
     def __init__(self, app_instance):
+        """FavoritesManager'ı başlatır.
+        
+        Args:
+            app_instance: Ana uygulama referansı.
+        """
         self.app = app_instance # Ana App örneğini sakla
 
     def _populate_favorites_list(self):

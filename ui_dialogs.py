@@ -11,7 +11,6 @@ import subprocess
 import platform
 from tkinter import messagebox, filedialog
 
-from regex import F
 from python_editor import PythonEditor  
 from db_manager import DatabaseManager
 from exclusion_utils import ExclusionManager # Merkezi exclusion yönetimi

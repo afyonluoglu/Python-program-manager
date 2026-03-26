@@ -3,14 +3,32 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox, ttk
 import os
-import threading # For starting search threads
+import threading # Arama thread'leri için
 
 # Yerel modüllerden importlar (App'den çağrılacakları için App'in importlarına benzer)
 from ui_dialogs import SearchResultsWindow, WordSearchResultsWindow
 import operations # operations.py'deki fonksiyonları kullanmak için
 
 class SearchManager:
+    """Dosya ve kelime arama işlemlerini yönetir.
+    
+    Bu sınıf, klasörler içinde dosya arama ve dosya içeriklerinde
+    kelime/metin arama işlevlerini sağlar. Arama işlemleri arka planda
+    thread olarak çalıştırılır.
+    
+    Attributes:
+        app: Ana uygulama referansı (App).
+        
+    Example:
+        >>> search_manager = SearchManager(app_instance)
+        >>> search_manager.prompt_search()
+    """
     def __init__(self, app_instance):
+        """SearchManager'ı başlatır.
+        
+        Args:
+            app_instance: Ana uygulama referansı.
+        """
         self.app = app_instance
 
     def prompt_search_OLD(self):

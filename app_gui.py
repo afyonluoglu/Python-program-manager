@@ -11,8 +11,6 @@ import json
 from datetime import datetime
 import sys
 
-from sympy import false # ZIP dosyalarını okumak için
-
 # Yerel modüllerden importlar
 from utils import DB_NAME, DEFAULT_DARK_THEME_COLORS, ICON_FOLDER, ICON_PYTHON_FILE, ICON_COMPRESS, ICON_EXECUTABLE, ICON_UNKNOWN, ICON_DATABASE_FILE, ICON_ARROW_UP, ICON_ARROW_DOWN, BACKUP_FOLDER_BASENAME, ICON_MP3_FILE, ICON_PLAY_BUTTON, ICON_PAUSE_BUTTON, ICON_STOP_BUTTON
 from db_manager import DatabaseManager
@@ -35,8 +33,30 @@ from custom_widgets import ColoredContextMenu  # Import ekleyin
 
 # --- Ana Uygulama Sınıfı ---
 class App(tk.Tk):
-    """Ana uygulama penceresi ve mantığı."""
+    """Python Program Yöneticisi ana uygulama sınıfı.
+    
+    Bu sınıf, uygulamanın ana penceresini ve tüm yönetici bileşenlerini
+    koordine eder. Dosya tarayıcı, Python editörü, arama, favoriler,
+    tema yönetimi ve çalıştırma geçmişi gibi özellikleri içerir.
+    
+    Attributes:
+        base_path: Uygulamanın çalıştığı temel dizin.
+        db: Veritabanı yöneticisi (DatabaseManager).
+        style: ttk stil nesnesi.
+        file_browser: Dosya tarayıcı yöneticisi.
+        search_manager: Arama yöneticisi.
+        favorites_manager: Favoriler yöneticisi.
+        theme_manager: Tema yöneticisi.
+        history_manager: Geçmiş yöneticisi.
+        execution_manager: Çalıştırma yöneticisi.
+        python_analyzer: Python analiz yöneticisi.
+        
+    Example:
+        >>> app = App()
+        >>> app.mainloop()
+    """
     def __init__(self):
+        """App sınıfını başlatır ve tüm bileşenleri yükler."""
         super().__init__()
         self.title("Python Program Yöneticisi")
         self.geometry("900x650") # Boyutu biraz büyüttük
@@ -618,12 +638,6 @@ class App(tk.Tk):
 
         try:              
             # Seçili öğenin tam yolunu al (values'daki ikinci öğe)
-            item_tags = self.file_list.item(selected_item, "tags")
-            file_path = self.file_list.item(selected_item, "values")[2] # İndeks 2'ye güncellendi
-
-            # Renkli context menu oluştur
-            context_menu = ColoredContextMenu(self)
-
             item_tags = self.file_list.item(selected_item, "tags")
             file_path = self.file_list.item(selected_item, "values")[2] # İndeks 2'ye güncellendi
 
@@ -1567,10 +1581,11 @@ class App(tk.Tk):
     def _open_python_editor(self, file_path):
         """Python editörü penceresi açar."""
         try:
-            editor = PythonEditor(self, file_path, false)
+            editor = PythonEditor(self, file_path, False)
             # History'e kaydet
             self.db.add_history(f"Python Editörü: {file_path}", "python_editor")
         except Exception as e:
+            print(f"Python editörü açılırken hata oluştu: {e}")
             messagebox.showerror("Hata", f"Python editörü açılırken hata oluştu:\n{e}", parent=self)
 
     @staticmethod
@@ -1672,25 +1687,25 @@ class App(tk.Tk):
          HTML_file_count, py_line_count, HTML_line_count, zip_file_count, total_zip_size, 
          _, _, excluded_file_count, excluded_dir_count) = calculate_folder_size(folder_path)
         
-        result_HTML = f"Number of HTML files: {HTML_file_count:,}\nTotal HTML Size: {self.format_file_size(total_HTML_size)}\n" + \
-                f"Total HTML Line Count: {HTML_line_count:,}" if HTML_file_count > 0 else ""
+        result_HTML = f"HTML Dosya Sayısı: {HTML_file_count:,}\nToplam HTML Boyutu: {self.format_file_size(total_HTML_size)}\n" + \
+                f"Toplam HTML Satır Sayısı: {HTML_line_count:,}" if HTML_file_count > 0 else ""
         
-        result_ZIP = f"Number of ZIP files: {zip_file_count:,}\nTotal ZIP Size: {self.format_file_size(total_zip_size)}\n\n" if zip_file_count > 0 else ""
+        result_ZIP = f"ZIP Dosya Sayısı: {zip_file_count:,}\nToplam ZIP Boyutu: {self.format_file_size(total_zip_size)}\n\n" if zip_file_count > 0 else ""
 
         # Hariç tutulan öğeler bilgisi
         exclusion_info = ""
         if excluded_file_count > 0 or excluded_dir_count > 0:
             exclusion_info = f"\n\n--- Hariç Tutulanlar ---\nKlasör: {excluded_dir_count:,}\nDosya: {excluded_file_count:,}\n"
 
-        sonuc = f"Folder: {folder_path}\n\n" + \
-                 f"Number of files: {file_count:,}\nTotal Folder Size: {self.format_file_size(folder_size)}\n\n" + \
-                 f"Number of Python files: {py_file_count:,}\nTotal Python Size: {self.format_file_size(total_python_size)}\n" + \
-                 f"Total Python Code Lines: {py_line_count:,}\n\n" + \
+        sonuc = f"Klasör: {folder_path}\n\n" + \
+                 f"Dosya Sayısı: {file_count:,}\nToplam Klasör Boyutu: {self.format_file_size(folder_size)}\n\n" + \
+                 f"Python Dosyası Sayısı: {py_file_count:,}\nToplam Python Boyutu: {self.format_file_size(total_python_size)}\n" + \
+                 f"Toplam Python Kod Satırı: {py_line_count:,}\n\n" + \
                  f"{result_ZIP}" + \
                  f"{result_HTML}" + \
                  f"{exclusion_info}"
 
-        messagebox.showinfo("Folder Properties",  sonuc)
+        messagebox.showinfo("Klasör Özellikleri",  sonuc)
 
     def show_dir_context_menu(self, event):
         """Klasör ağacında sağ tıklandığında içerik menüsünü gösterir."""
