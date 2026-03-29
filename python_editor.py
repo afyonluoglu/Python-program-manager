@@ -168,6 +168,7 @@ class PythonEditor:
         
         # Ana metin alanı
         self.text_area = tk.Text(text_frame, wrap=tk.NONE, undo=True, maxundo=50,
+                                autoseparators=True,
                                 font=('Consolas', 10), insertbackground='black',
                                 selectbackground='lightblue')
 
@@ -307,7 +308,7 @@ class PythonEditor:
         
         Args:
             event: Klavye olayı.
-        """
+        """        
         # Önce satır numaralarını güncelle
         self._update_line_numbers()
         
@@ -321,6 +322,11 @@ class PythonEditor:
             # Ok tuşları, Enter, Tab, Escape - bunlar özel binding'lerle işleniyor
             if event.keysym in ['Up', 'Down', 'Return', 'Tab', 'Escape']:
                 return  # Bu tuşlar autocomplete binding'leri tarafından işlenir
+        
+        # ENTER tuşu seçim sonrası kısa süre içinde tekrar kontrol edilmemeli
+        # (autocomplete kapandıktan hemen sonra ENTER release olayı gelir)
+        if event.keysym == 'Return':
+            return
         
         # Navigasyon tuşlarında autocomplete'i kapat (sol/sağ ok)
         if event.keysym in ['Left', 'Right']:
@@ -695,10 +701,13 @@ class PythonEditor:
         Args:
             listbox: Öneri listesini içeren Listbox widget'ı.
         """
+        print(f"[DEBUG] insert_completion: Başladı")
         try:
             selection = listbox.curselection()
+            print(f"[DEBUG] insert_completion: selection={selection}")
             if selection:
                 selected = self.suggestions[selection[0]]
+                print(f"[DEBUG] insert_completion: Seçilen kelime='{selected['name']}'")
                 
                 # Mevcut kelimeyi bul ve değiştir
                 current_pos = self.text_area.index(tk.INSERT)
@@ -713,11 +722,14 @@ class PythonEditor:
                 
                 # Yeni metni ekle
                 self.text_area.insert(tk.INSERT, selected['name'])
+                print(f"[DEBUG] insert_completion: Kelime eklendi")
 
         except Exception as e:
             print(f"[DEBUG] insert_completion: HATA - {e}")
         finally:
+            print(f"[DEBUG] insert_completion: hide_autocomplete çağrılıyor")
             self.hide_autocomplete()
+            print(f"[DEBUG] insert_completion: hide_autocomplete çağrıldı, window={self.autocomplete_window}")
     
     def hide_autocomplete_OLD(self, event=None):
         """Otomatik tamamlama penceresini gizle"""
@@ -734,6 +746,8 @@ class PythonEditor:
         Args:
             event: Opsiyonel olay nesnesi (binding'lerden çağrıldığında).
         """
+        print(f"[DEBUG] hide_autocomplete: Başladı, window={self.autocomplete_window is not None}")
+        
         # Autocomplete için eklenen tuş binding'lerini kaldır
         for attr in ['_ac_up_id', '_ac_down_id', '_ac_return_id', '_ac_tab_id', '_ac_escape_id']:
             binding_id = getattr(self, attr, None)
@@ -748,13 +762,15 @@ class PythonEditor:
                     }.get(attr)
                     if event_name:
                         self.text_area.unbind(event_name, binding_id)
-                except tk.TclError:
-                    pass
+                        print(f"[DEBUG] hide_autocomplete: {event_name} binding kaldırıldı")
+                except tk.TclError as e:
+                    print(f"[DEBUG] hide_autocomplete: {attr} unbind hatası - {e}")
                 setattr(self, attr, None)
             
         if self._autocomplete_click_handler_id:
             try:
                 self.text_area.unbind('<Button-1>', self._autocomplete_click_handler_id)
+                print(f"[DEBUG] hide_autocomplete: Button-1 binding kaldırıldı")
             except tk.TclError:
                 pass  # Binding zaten yoksa hata verme
             self._autocomplete_click_handler_id = None
@@ -768,10 +784,13 @@ class PythonEditor:
         if self.autocomplete_window:
             try:
                 self.autocomplete_window.destroy()
+                print(f"[DEBUG] hide_autocomplete: Pencere yok edildi")
             except tk.TclError:
                 pass  # Pencere zaten yoksa hata verme
             finally:
                 self.autocomplete_window = None
+        
+        print(f"[DEBUG] hide_autocomplete: Tamamlandı")
 
     def _on_navigate(self, event):
         """Klavye navigasyon tuşlarıyla hareket edildiğinde görünümü günceller."""
@@ -840,6 +859,30 @@ class PythonEditor:
     
     def _on_key_press(self, event):
         """Tuş basma olayını işler."""
+        # Fonksiyon tuşları (F1-F12), Ctrl kombinasyonları ve navigasyon tuşları modified flag'i etkilememeli
+        non_modifying_keys = {
+            'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+            'Control_L', 'Control_R', 'Shift_L', 'Shift_R', 'Alt_L', 'Alt_R',
+            'Caps_Lock', 'Escape', 'Up', 'Down', 'Left', 'Right', 'Home', 'End',
+            'Prior', 'Next', 'Insert', 'Pause', 'Scroll_Lock', 'Num_Lock',
+            'Print', 'Win_L', 'Win_R', 'Menu'
+        }
+        
+        # Ctrl/Alt kombinasyonları (Ctrl+Z, Ctrl+C vb.) da modified etmemeli
+        if event.state & 0x4 or event.state & 0x20000:  # Control tuşu basılı
+            return None  # Normal işlemeye devam et
+        
+        if event.keysym in non_modifying_keys:
+            return None  # Normal işlemeye devam et
+        
+        # Sadece gerçek karakter giriş tuşları is_modified yapmalı
+        
+        # Undo için separator ekle - her karakter ayrı bir undo birimi olsun
+        try:
+            self.text_area.edit_separator()
+        except tk.TclError as e:
+            print(f"[DEBUG] _on_key_press: edit_separator hatası - {e}")
+        
         self.is_modified = True
         self._update_title()
         
@@ -1137,8 +1180,8 @@ class PythonEditor:
             self._update_line_numbers()
             self._syntax_highlight()
             self._check_modified_state()
-        except tk.TclError:
-            pass  # Geri alınacak işlem yok
+        except tk.TclError as e:
+            print(f"[DEBUG] _undo: TclError - {e}")
     
     def _redo(self):
         """Yinele."""
@@ -1157,12 +1200,15 @@ class PythonEditor:
         """
         if hasattr(self, '_original_content'):
             current_content = self.text_area.get('1.0', 'end-1c')
-            if current_content == self._original_content:
+            contents_match = current_content == self._original_content
+            if contents_match:
                 self.is_modified = False
                 self._update_title()
             else:
                 self.is_modified = True
                 self._update_title()
+        else:
+            print(f"[DEBUG] _check_modified_state: _original_content yok!")
     
     def _cut(self):
         """Kes."""

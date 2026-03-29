@@ -17,5 +17,6 @@ if platform.system() == "Windows":
            pass
 
 if __name__ == "__main__":
+    print("Python Program Manager başlatılıyor...")
     app = App()
     app.mainloop()

@@ -165,7 +165,8 @@ class DependencyAnalyzer:
         """Dosyadan import'ları çıkar"""
         imports = set()
         
-        with open(file_path, 'r', encoding='utf-8') as f:
+        # utf-8-sig: BOM karakterini otomatik olarak kaldırır
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
             try:
                 tree = ast.parse(f.read())
                 
@@ -608,12 +609,17 @@ DOSYA LİSTESİ
             if folder:
                 content += f"\n[{folder}]\n"
             
+            toplam_satir = 0
             for file_path, rel_path in folder_files[folder]:
                 file_stats = results['file_details'][file_path]['code_stats']
                 display_name = rel_path.replace('/', '\\')
-                content += f"{file_index:2d}. {display_name} ({file_stats['total_lines']} satır)\n"
+                content += f"{file_index:2d}. {display_name} ({file_stats['total_lines']:,} satır)\n"
+                toplam_satir += file_stats['total_lines']
                 file_index += 1
         
+            content += f"\n    Toplam Satır: {toplam_satir:,}\n"
+
+
         text_widget.insert(tk.END, content)
         text_widget.config(state=tk.DISABLED)
 
@@ -888,7 +894,8 @@ DOSYA LİSTESİ
         user_imports = []
         
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            # utf-8-sig: BOM karakterini otomatik olarak kaldırır
+            with open(file_path, 'r', encoding='utf-8-sig') as f:
                 content = f.read()
             
             try:
@@ -1154,8 +1161,8 @@ DOSYA LİSTESİ
         }
 
         try:
-            # Dosyayı oku
-            with open(file_path, 'r', encoding='utf-8') as f:
+            # Dosyayı oku - utf-8-sig: BOM karakterini otomatik olarak kaldırır
+            with open(file_path, 'r', encoding='utf-8-sig') as f:
                 content = f.read()
             
             # Satır bazlı analiz

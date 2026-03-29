@@ -178,7 +178,8 @@ class MethodAnalyzer:
     def _analyze_single_file(self, file_path):
         """Tek bir Python dosyasını analiz eder."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            # utf-8-sig: BOM karakterini otomatik olarak kaldırır
+            with open(file_path, 'r', encoding='utf-8-sig') as f:
                 content = f.read()
             
             tree = ast.parse(content)
@@ -231,7 +232,8 @@ class MethodAnalyzer:
     def _search_method_in_file(self, method_name, file_path):
         """Belirtilen dosyada metod ismini arar."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            # utf-8-sig: BOM karakterini otomatik olarak kaldırır
+            with open(file_path, 'r', encoding='utf-8-sig') as f:
                 lines = f.readlines()
             
             for line_num, line in enumerate(lines, 1):
@@ -298,7 +300,8 @@ class MethodAnalyzer:
             base_dir = file_dir
         
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            # utf-8-sig: BOM karakterini otomatik olarak kaldırır
+            with open(file_path, 'r', encoding='utf-8-sig') as f:
                 content = f.read()
             
             tree = ast.parse(content)
@@ -648,7 +651,8 @@ class MethodAnalyzer:
     def _is_main_file(self, file_path):
         """Dosyanın projenin ana dosyası olup olmadığını kontrol eder."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            # utf-8-sig: BOM karakterini otomatik olarak kaldırır
+            with open(file_path, 'r', encoding='utf-8-sig') as f:
                 content = f.read()
             
             # 1. __main__ kontrolü - En güvenilir yöntem
@@ -950,7 +954,8 @@ class MethodAnalyzer:
         excluded_methods_found = []
         for py_file in self.analyzed_files:
             try:
-                with open(py_file, 'r', encoding='utf-8') as f:
+                # utf-8-sig: BOM karakterini otomatik olarak kaldırır
+                with open(py_file, 'r', encoding='utf-8-sig') as f:
                     content = f.read()
                 
                 tree_ast = ast.parse(content)

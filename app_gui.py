@@ -196,15 +196,35 @@ class App(tk.Tk):
 
     def _bind_global_shortcuts(self):
         """Uygulama geneli klavye kısayollarını bağlar."""
-        self.bind_all("<Control-d>", lambda event: self.search_manager.prompt_search())
-        self.bind_all("<Control-f>", lambda event: self.search_manager.prompt_word_search()) 
-        self.bind_all("<Control-o>", lambda event: self.file_browser.select_folder())
-        self.bind_all("<Control-q>", lambda event: self.on_closing())
-        self.bind_all("<Control-p>", lambda event: self.open_window_settings_dialog())
-        self.bind_all("<Control-b>", lambda event: self.favorites_manager._toggle_favorites_panel())
-        self.bind_all("<Control-h>", lambda event: self.history_manager.show_history())
-        self.bind_all("<Control-t>", lambda event: self.theme_manager.manage_themes())
-        self.bind_all("<F1>", lambda event: self.show_help())
+        # Helper fonksiyon: Sadece ana pencere veya alt widget'larında çalışsın
+        # Python editörü gibi Toplevel pencerelerde çalışmasın
+        def main_window_only(callback):
+            def wrapper(event):
+                # Event'in geldiği widget'ın hangi pencereye ait olduğunu bul
+                widget = event.widget
+                try:
+                    # winfo_toplevel() ile en üst pencereyi bul
+                    top_window = widget.winfo_toplevel()
+                    # Sadece ana pencere (self) ise çalıştır
+                    if top_window == self:
+                        return callback(event)
+                    else:
+                        print(f"[DEBUG] Global shortcut engellendi - pencere: {top_window.title() if hasattr(top_window, 'title') else 'unknown'}")
+                        return None  # Diğer pencerelerde çalışmasın
+                except Exception as e:
+                    print(f"[DEBUG] Global shortcut wrapper hatası: {e}")
+                    return None
+            return wrapper
+        
+        self.bind_all("<Control-d>", main_window_only(lambda event: self.search_manager.prompt_search()))
+        self.bind_all("<Control-f>", main_window_only(lambda event: self.search_manager.prompt_word_search())) 
+        self.bind_all("<Control-o>", main_window_only(lambda event: self.file_browser.select_folder()))
+        self.bind_all("<Control-q>", lambda event: self.on_closing())  # Çıkış her yerden çalışabilir
+        self.bind_all("<Control-p>", main_window_only(lambda event: self.open_window_settings_dialog()))
+        self.bind_all("<Control-b>", main_window_only(lambda event: self.favorites_manager._toggle_favorites_panel()))
+        self.bind_all("<Control-h>", main_window_only(lambda event: self.history_manager.show_history()))
+        self.bind_all("<Control-t>", main_window_only(lambda event: self.theme_manager.manage_themes()))
+        self.bind_all("<F1>", lambda event: self.show_help())  # Yardım her yerden açılabilir
         
         # Not: Bazı widget'lar (örn. Entry) Ctrl+H gibi kısayolları kendileri için yakalayabilir.
         # Bu durumda, event.widget.winfo_class() kontrolü ile Entry widget'ındaysa işlem yapmamak gibi
@@ -1615,6 +1635,7 @@ class App(tk.Tk):
                 try:
                     with open(file_path, 'r', encoding='utf-8') as file:
                         satir = sum(1 for _ in file)
+                        satir += 1  # Son satırın newline ile bitmemesi durumunda ekle
                         # print(f"({file_number}) : {file_path}: {satir} satır")                        
                         # print(f"   count_lines_in_a_file - {file_number}: {os.path.basename(file_path)}: {satir} satır")
                         return satir
@@ -1643,6 +1664,7 @@ class App(tk.Tk):
                     if exclusion_manager.should_exclude_dir(dir_name):
                         dirs_to_remove.append(dir_name)
                         excluded_dir_count += 1
+                        print(f"🔧 DEBUG: Klasör hariç tutuluyor: {os.path.join(dirpath, dir_name)}")
                         excluded_dir_path = os.path.join(dirpath, dir_name)
                         # Hariç tutulan klasördeki dosyaları da say
                         excluded_file_count += exclusion_manager.count_files_in_dir(excluded_dir_path)
